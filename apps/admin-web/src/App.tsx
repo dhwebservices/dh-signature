@@ -24,6 +24,8 @@ const initialCampaigns: CampaignItem[] = [
   {
     id: 'launch-consistency',
     name: 'Signature consistency launch',
+    headline: 'Need help with your website or digital growth?',
+    body: 'Book a call with DH Website Services and speak to the right team.',
     ctaLabel: 'Book a call',
     audience: 'All staff mailboxes',
     status: 'Live',
@@ -31,6 +33,8 @@ const initialCampaigns: CampaignItem[] = [
   {
     id: 'client-ops-cta',
     name: 'Client Ops follow-up CTA',
+    headline: 'Need support with your live website or client workspace?',
+    body: 'Speak to DH Website Services and get routed to the right support team.',
     ctaLabel: 'DH Workplace',
     audience: 'Client Operations',
     status: 'Draft',
@@ -369,11 +373,13 @@ function AuthedApp() {
     setToast('Update published')
   }
 
-  function handleAddCampaign(name: string, ctaLabel: string, audience: string) {
+  function handleAddCampaign(name: string, headline: string, body: string, ctaLabel: string, audience: string) {
     setCampaigns((current) => [
       {
         id: `${name}-${Date.now()}`,
         name,
+        headline,
+        body,
         ctaLabel,
         audience,
         status: 'Draft',

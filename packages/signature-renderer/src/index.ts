@@ -44,7 +44,7 @@ function socialBadge(link: SocialLink) {
   `
 }
 
-export function renderSignature({ profile, template, branding }: SignatureAssignment): RenderedSignature {
+export function renderSignature({ profile, template, branding, banner }: SignatureAssignment): RenderedSignature {
   const departmentChip = template.showDepartmentChip
     ? `<div style="display:inline-flex;padding:5px 10px;border-radius:999px;background:${template.accentColor}12;color:${template.accentColor};font-size:11px;font-weight:600;margin-top:8px;">${profile.department}</div>`
     : ''
@@ -56,6 +56,8 @@ export function renderSignature({ profile, template, branding }: SignatureAssign
   const workplaceLink = template.showWorkplaceLink
     ? `<a href="${profile.workplaceUrl}" style="color:${template.secondaryColor};text-decoration:none;">${branding.workplaceLabel}</a>`
     : ''
+
+  const bannerHtml = bannerBlock(profile.bookingUrl, template.accentColor, banner)
 
   const disclaimerHtml = `
     <div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(18,32,63,0.12);font-size:11px;line-height:1.55;color:#5b6475;">
@@ -97,6 +99,7 @@ export function renderSignature({ profile, template, branding }: SignatureAssign
                 ${profile.socialLinks.map(socialBadge).join('')}
               </div>
             </div>
+            ${bannerHtml}
             ${disclaimerHtml}
           </td>
         </tr>
@@ -114,6 +117,9 @@ export function renderSignature({ profile, template, branding }: SignatureAssign
     template.showWorkplaceLink ? branding.workplaceLabel : '',
     template.showBookingCta ? branding.bookingLabel : '',
     ...profile.socialLinks.map((link) => `${link.label}: ${link.href}`),
+    banner?.headline || '',
+    banner?.body || '',
+    banner ? `${banner.ctaLabel}: ${banner.ctaHref}` : '',
     '',
     'CONFIDENTIALITY NOTICE: This email (and any attachments) is intended only for the named recipient(s) and may contain confidential and/or legally privileged information. If you are not the intended recipient, please notify the sender immediately, delete this email from your system, and do not copy, disclose, or use its contents.',
     'SECURITY: Please do not open attachments or click links unless you recognise the sender and were expecting the message.',
@@ -121,4 +127,15 @@ export function renderSignature({ profile, template, branding }: SignatureAssign
   ].filter(Boolean).join('\n')
 
   return { html, plainText }
+}
+
+function bannerBlock(defaultHref: string, accentColor: string, banner?: SignatureAssignment['banner']) {
+  if (!banner) return ''
+  return `
+    <div style="margin-top:16px;padding:16px 18px;border-radius:18px;background:linear-gradient(135deg, ${accentColor}16, rgba(15,159,127,0.12));border:1px solid ${accentColor}26;">
+      <div style="font-size:14px;line-height:1.25;font-weight:700;color:#1f2430;">${banner.headline}</div>
+      <div style="font-size:12px;line-height:1.55;color:#526079;margin-top:6px;max-width:420px;">${banner.body}</div>
+      <a href="${banner.ctaHref || defaultHref}" style="display:inline-flex;align-items:center;justify-content:center;height:34px;padding:0 14px;border-radius:999px;background:${accentColor};color:#ffffff;text-decoration:none;font-size:12px;font-weight:600;margin-top:12px;">${banner.ctaLabel}</a>
+    </div>
+  `.trim()
 }

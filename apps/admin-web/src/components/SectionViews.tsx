@@ -1,14 +1,8 @@
 import { useMemo, useState } from 'react'
 import { PauseCircle, PlayCircle, RefreshCcw, ShieldCheck } from 'lucide-react'
-import type { SignatureAssignments, SignatureProfile, SignatureTemplate, TenantBranding } from '@dh-signature/shared-types'
+import type { SignatureAssignments, SignatureCampaign, SignatureProfile, SignatureTemplate, TenantBranding } from '@dh-signature/shared-types'
 
-interface CampaignItem {
-  id: string
-  name: string
-  ctaLabel: string
-  audience: string
-  status: 'Draft' | 'Live' | 'Paused'
-}
+type CampaignItem = SignatureCampaign
 
 export function AssignmentsView({
   profiles,
@@ -160,10 +154,12 @@ export function CampaignsView({
   onToggle,
 }: {
   campaigns: CampaignItem[]
-  onCreate: (name: string, ctaLabel: string, audience: string) => void
+  onCreate: (name: string, headline: string, body: string, ctaLabel: string, audience: string) => void
   onToggle: (campaignId: string) => void
 }) {
   const [name, setName] = useState('')
+  const [headline, setHeadline] = useState('Need help with your website or digital growth?')
+  const [body, setBody] = useState('Book a call with DH Website Services and speak to the right team.')
   const [ctaLabel, setCtaLabel] = useState('Book a call')
   const [audience, setAudience] = useState('All staff mailboxes')
 
@@ -177,13 +173,15 @@ export function CampaignsView({
       </div>
       <div className="campaign-builder">
         <InputField label="Campaign name" value={name} onChange={setName} placeholder="Quarterly booking push" />
+        <InputField label="Banner headline" value={headline} onChange={setHeadline} />
+        <InputField label="Banner body" value={body} onChange={setBody} />
         <InputField label="CTA label" value={ctaLabel} onChange={setCtaLabel} />
         <InputField label="Audience" value={audience} onChange={setAudience} />
         <button
           className="primary-btn compact"
           onClick={() => {
             if (!name.trim()) return
-            onCreate(name.trim(), ctaLabel.trim(), audience.trim())
+            onCreate(name.trim(), headline.trim(), body.trim(), ctaLabel.trim(), audience.trim())
             setName('')
           }}
         >
@@ -196,6 +194,7 @@ export function CampaignsView({
             <div>
               <div className="table-main">{campaign.name}</div>
               <div className="table-sub">{campaign.audience} · CTA: {campaign.ctaLabel}</div>
+              <div className="table-sub" style={{ marginTop: 6 }}>{campaign.headline}</div>
             </div>
             <div className="campaign-actions">
               <span className={`status-chip status-${campaign.status.toLowerCase()}`}>{campaign.status}</span>

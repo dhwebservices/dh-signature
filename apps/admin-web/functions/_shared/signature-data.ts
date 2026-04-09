@@ -73,6 +73,8 @@ const defaultCampaigns: SignatureCampaign[] = [
   {
     id: 'launch-consistency',
     name: 'Signature consistency launch',
+    headline: 'Need help with your website or digital growth?',
+    body: 'Book a call with DH Website Services and speak to the right team.',
     ctaLabel: 'Book a call',
     audience: 'All staff mailboxes',
     status: 'Live',
@@ -80,6 +82,8 @@ const defaultCampaigns: SignatureCampaign[] = [
   {
     id: 'client-ops-cta',
     name: 'Client Ops follow-up CTA',
+    headline: 'Need support with your live website or client workspace?',
+    body: 'Speak to DH Website Services and get routed to the right support team.',
     ctaLabel: 'DH Workplace',
     audience: 'Client Operations',
     status: 'Draft',
@@ -318,6 +322,13 @@ export async function buildAssignmentByEmail(email: string, env: Env): Promise<S
   const activeTemplate =
     overview.templates.find((template) => template.id === assignedTemplateId) ||
     overview.templates[0]
+  const normalizedDepartment = (profile?.department || '').trim().toLowerCase()
+  const activeCampaign =
+    overview.campaigns.find((campaign) => {
+      if (campaign.status !== 'Live') return false
+      const audience = campaign.audience.trim().toLowerCase()
+      return audience === 'all staff mailboxes' || audience === normalizedDepartment || audience.includes(normalizedDepartment)
+    }) || null
 
   if (!profile) {
     throw new Error(`No signature profile found for ${normalizedEmail}.`)
@@ -327,5 +338,13 @@ export async function buildAssignmentByEmail(email: string, env: Env): Promise<S
     profile,
     template: activeTemplate,
     branding: overview.branding,
+    banner: activeCampaign
+      ? {
+          headline: activeCampaign.headline,
+          body: activeCampaign.body,
+          ctaLabel: activeCampaign.ctaLabel,
+          ctaHref: activeCampaign.ctaLabel.toLowerCase().includes('workplace') ? profile.workplaceUrl : profile.bookingUrl,
+        }
+      : null,
   }
 }

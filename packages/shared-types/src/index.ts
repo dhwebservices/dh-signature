@@ -54,6 +54,7 @@ export interface SignatureAssignment {
   profile: SignatureProfile
   template: SignatureTemplate
   branding: TenantBranding
+  banner?: SignatureBanner | null
 }
 
 export interface AdminUser {
@@ -65,9 +66,18 @@ export interface AdminUser {
 export interface SignatureCampaign {
   id: string
   name: string
+  headline: string
+  body: string
   ctaLabel: string
   audience: string
   status: 'Draft' | 'Live' | 'Paused'
+}
+
+export interface SignatureBanner {
+  headline: string
+  body: string
+  ctaLabel: string
+  ctaHref: string
 }
 
 export interface SignatureActivity {
