@@ -5,6 +5,8 @@ export const tenantBranding: TenantBranding = {
   companyWebsiteLabel: 'dhwebsiteservices.co.uk',
   workplaceLabel: 'DH Workplace',
   bookingLabel: 'Book a call',
+  privacyPolicyLabel: 'Privacy Policy',
+  privacyPolicyUrl: 'https://dhwebsiteservices.co.uk/privacy-policy',
   logoMark: 'DH',
 }
 

@@ -39,6 +39,8 @@ export interface TenantBranding {
   companyWebsiteLabel: string
   workplaceLabel: string
   bookingLabel: string
+  privacyPolicyLabel: string
+  privacyPolicyUrl: string
   logoMark: string
 }
 

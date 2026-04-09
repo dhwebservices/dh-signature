@@ -14,6 +14,7 @@ interface Env {
   DH_WEBSITE_URL?: string
   DH_WORKPLACE_URL?: string
   DH_BOOKING_URL?: string
+  DH_PRIVACY_POLICY_URL?: string
   DH_INSTAGRAM_URL?: string
   DH_FACEBOOK_URL?: string
   DH_LINKEDIN_URL?: string
@@ -61,6 +62,7 @@ function buildBranding(env: Env): TenantBranding {
   return {
     ...tenantBranding,
     companyWebsiteLabel: env.DH_WEBSITE_URL ? new URL(env.DH_WEBSITE_URL).host.replace(/^www\./, '') : tenantBranding.companyWebsiteLabel,
+    privacyPolicyUrl: env.DH_PRIVACY_POLICY_URL || tenantBranding.privacyPolicyUrl,
   }
 }
 

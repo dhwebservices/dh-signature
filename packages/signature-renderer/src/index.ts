@@ -21,6 +21,20 @@ export function renderSignature({ profile, template, branding }: SignatureAssign
     ? `<a href="${profile.workplaceUrl}" style="color:${template.secondaryColor};text-decoration:none;">${branding.workplaceLabel}</a>`
     : ''
 
+  const disclaimerHtml = `
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(18,32,63,0.12);font-size:11px;line-height:1.55;color:#5b6475;">
+      <div style="margin-bottom:8px;">
+        <strong style="color:#243047;">CONFIDENTIALITY NOTICE:</strong> This email (and any attachments) is intended only for the named recipient(s) and may contain confidential and/or legally privileged information. If you are not the intended recipient, please notify the sender immediately, delete this email from your system, and do not copy, disclose, or use its contents.
+      </div>
+      <div style="margin-bottom:8px;">
+        <strong style="color:#243047;">SECURITY:</strong> Please do not open attachments or click links unless you recognise the sender and were expecting the message.
+      </div>
+      <div>
+        <strong style="color:#243047;">PRIVACY:</strong> ${branding.companyName} processes personal data in accordance with its <a href="${branding.privacyPolicyUrl}" style="color:${template.secondaryColor};text-decoration:none;">${branding.privacyPolicyLabel}</a>.
+      </div>
+    </div>
+  `.trim()
+
   const html = `
     <div style="font-family:Inter,Arial,sans-serif;color:#1f2430;max-width:620px;">
       <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;">
@@ -47,6 +61,7 @@ export function renderSignature({ profile, template, branding }: SignatureAssign
                 ${profile.socialLinks.map(socialBadge).join('')}
               </div>
             </div>
+            ${disclaimerHtml}
           </td>
         </tr>
       </table>
@@ -63,6 +78,10 @@ export function renderSignature({ profile, template, branding }: SignatureAssign
     template.showWorkplaceLink ? branding.workplaceLabel : '',
     template.showBookingCta ? branding.bookingLabel : '',
     ...profile.socialLinks.map((link) => `${link.label}: ${link.href}`),
+    '',
+    'CONFIDENTIALITY NOTICE: This email (and any attachments) is intended only for the named recipient(s) and may contain confidential and/or legally privileged information. If you are not the intended recipient, please notify the sender immediately, delete this email from your system, and do not copy, disclose, or use its contents.',
+    'SECURITY: Please do not open attachments or click links unless you recognise the sender and were expecting the message.',
+    `PRIVACY: ${branding.companyName} processes personal data in accordance with its ${branding.privacyPolicyLabel}: ${branding.privacyPolicyUrl}`,
   ].filter(Boolean).join('\n')
 
   return { html, plainText }

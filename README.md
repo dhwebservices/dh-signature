@@ -150,6 +150,7 @@ DH_BUSINESS_LANDLINE=02920 024218
 DH_WEBSITE_URL=https://dhwebsiteservices.co.uk
 DH_WORKPLACE_URL=https://workplace.dhwebsiteservices.co.uk
 DH_BOOKING_URL=https://dhwebsiteservices.co.uk/contact
+DH_PRIVACY_POLICY_URL=https://dhwebsiteservices.co.uk/privacy-policy
 DH_INSTAGRAM_URL=https://instagram.com/dhwebsiteservices
 DH_FACEBOOK_URL=https://facebook.com/dhwebsiteservices
 DH_LINKEDIN_URL=https://linkedin.com/company/dhwebsiteservices
