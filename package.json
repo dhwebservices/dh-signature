@@ -1,0 +1,19 @@
+{
+  "name": "dh-signature",
+  "private": true,
+  "version": "0.1.0",
+  "description": "DH-owned Outlook signature platform with admin UI, API, and add-in.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:admin": "npm run dev --workspace @dh-signature/admin-web",
+    "dev:api": "npm run dev --workspace @dh-signature/api",
+    "build": "npm run build --workspaces",
+    "check": "npm run check --workspaces"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
