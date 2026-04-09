@@ -10,8 +10,8 @@
   <DefaultLocale>en-GB</DefaultLocale>
   <DisplayName DefaultValue="DH Signature" />
   <Description DefaultValue="Tenant-wide Outlook signature platform for DH Website Services." />
-  <IconUrl DefaultValue="https://dhwebsiteservices.co.uk/favicon.ico" />
-  <HighResolutionIconUrl DefaultValue="https://dhwebsiteservices.co.uk/favicon.ico" />
+  <IconUrl DefaultValue="https://sig.dhwebsiteservices.co.uk/icons/dh-logo-icon.png" />
+  <HighResolutionIconUrl DefaultValue="https://sig.dhwebsiteservices.co.uk/icons/dh-logo.png" />
   <SupportUrl DefaultValue="https://dhwebsiteservices.co.uk" />
   <AppDomains>
     <AppDomain>https://dhwebsiteservices.co.uk</AppDomain>
@@ -88,9 +88,9 @@
       </Hosts>
       <Resources>
         <bt:Images>
-          <bt:Image id="Icon16" DefaultValue="https://dhwebsiteservices.co.uk/favicon.ico" />
-          <bt:Image id="Icon32" DefaultValue="https://dhwebsiteservices.co.uk/favicon.ico" />
-          <bt:Image id="Icon80" DefaultValue="https://dhwebsiteservices.co.uk/favicon.ico" />
+          <bt:Image id="Icon16" DefaultValue="https://sig.dhwebsiteservices.co.uk/icons/dh-logo-icon.png" />
+          <bt:Image id="Icon32" DefaultValue="https://sig.dhwebsiteservices.co.uk/icons/dh-logo-icon.png" />
+          <bt:Image id="Icon80" DefaultValue="https://sig.dhwebsiteservices.co.uk/icons/dh-logo.png" />
         </bt:Images>
         <bt:Urls>
           <bt:Url id="Taskpane.Url" DefaultValue="https://sig.dhwebsiteservices.co.uk/taskpane/index.html" />
