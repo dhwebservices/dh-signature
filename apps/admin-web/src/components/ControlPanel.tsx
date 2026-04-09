@@ -4,10 +4,18 @@ export function ControlPanel({
   profile,
   template,
   branding,
+  onActivateAllUsers,
+  onForceTenantRefresh,
+  onCopySignatureHtml,
+  onQueueUserRefresh,
 }: {
   profile: SignatureProfile
   template: SignatureTemplate
   branding: TenantBranding
+  onActivateAllUsers: () => void
+  onForceTenantRefresh: () => void
+  onCopySignatureHtml: () => void | Promise<void>
+  onQueueUserRefresh: () => void
 }) {
   return (
     <section className="panel control-panel">
@@ -26,8 +34,10 @@ export function ControlPanel({
           <Field label="Last synced" value={new Date(profile.lastSyncedAt).toLocaleString('en-GB')} />
         </div>
         <div className="action-row">
-          <button className="primary-btn compact">Activate for all users</button>
-          <button className="secondary-btn compact">Force tenant refresh</button>
+          <button className="primary-btn compact" onClick={onActivateAllUsers}>Activate for all users</button>
+          <button className="secondary-btn compact" onClick={onForceTenantRefresh}>Force tenant refresh</button>
+          <button className="secondary-btn compact" onClick={() => void onQueueUserRefresh()}>Refresh this user</button>
+          <button className="secondary-btn compact" onClick={() => void onCopySignatureHtml()}>Copy signature HTML</button>
         </div>
       </div>
 

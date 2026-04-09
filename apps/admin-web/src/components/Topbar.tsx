@@ -5,10 +5,16 @@ export function Topbar({
   activeSection,
   searchValue,
   onSearchChange,
+  unreadNotifications,
+  onToggleNotifications,
+  onPublishClick,
 }: {
   activeSection: AdminSection
   searchValue: string
   onSearchChange: (value: string) => void
+  unreadNotifications: number
+  onToggleNotifications: () => void
+  onPublishClick: () => void
 }) {
   const titleBySection: Record<AdminSection, string> = {
     Templates: 'Build the signature every staff member actually sends',
@@ -34,10 +40,11 @@ export function Topbar({
             placeholder="Search templates, staff, departments..."
           />
         </label>
-        <button className="icon-btn" aria-label="Notifications">
+        <button className="icon-btn notification-btn" aria-label="Notifications" onClick={onToggleNotifications}>
           <Bell size={16} />
+          {unreadNotifications ? <span className="notification-badge">{Math.min(unreadNotifications, 9)}</span> : null}
         </button>
-        <button className="primary-btn" type="button">
+        <button className="primary-btn" type="button" onClick={onPublishClick}>
           <Sparkles size={16} />
           Publish update
         </button>
