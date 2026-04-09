@@ -10,6 +10,8 @@
   "scripts": {
     "dev:admin": "npm run dev --workspace @dh-signature/admin-web",
     "dev:api": "npm run dev --workspace @dh-signature/api",
+    "build:admin": "npm run build --workspace @dh-signature/admin-web",
+    "build:cloudflare:admin": "npm install && npm run build --workspace @dh-signature/admin-web",
     "build": "npm run build --workspaces",
     "check": "npm run check --workspaces"
   },

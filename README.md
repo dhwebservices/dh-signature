@@ -123,6 +123,37 @@ VITE_ENTRA_TENANT_ID=your-tenant-id
 VITE_ENTRA_REDIRECT_URI=http://localhost:4177
 ```
 
+## Cloudflare Deployment
+
+The current **admin UI** should be deployed as a **Cloudflare Pages** project.
+
+It is **not** a Worker right now.
+
+Use these settings in Cloudflare Pages:
+
+- Project type: `Pages`
+- Production branch: `main`
+- Root directory: `apps/admin-web`
+- Framework preset: `Vite`
+- Build command: `npm install && npm run build --workspace @dh-signature/admin-web`
+- Build output directory: `dist`
+
+Recommended production env vars for the admin app:
+
+```bash
+VITE_ENTRA_CLIENT_ID=your-production-entra-client-id
+VITE_ENTRA_TENANT_ID=your-tenant-id
+VITE_ENTRA_REDIRECT_URI=https://your-admin-domain
+```
+
+Important:
+
+- the **admin UI** is Pages
+- the **API** is still a normal backend scaffold today, not Cloudflare-ready yet
+- the **Outlook add-in** assets can be hosted from the same admin domain later, but the compose/event logic still needs more build work
+
+If we want the API on Cloudflare too, the next step is to convert `apps/api` into a Worker or Pages Functions service.
+
 ## Important Notes
 
 - This repo is intentionally separate from `dh-portal-v2`
