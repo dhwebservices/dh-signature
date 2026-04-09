@@ -162,7 +162,8 @@ Important:
 - the **admin UI** is Pages
 - the **live admin API** now runs through Cloudflare Pages Functions inside `apps/admin-web/functions`
 - the separate `apps/api` scaffold still exists for later expansion, but the deployed admin app no longer needs a separate backend just to load staff data
-- the **Outlook add-in** assets can be hosted from the same admin domain later, but the compose/event logic still needs more build work
+- the **Outlook add-in** commands and taskpane pages are now hosted from the same admin domain under `/commands/*` and `/taskpane/*`
+- to make the signature live in Outlook tenant-wide, the manifest still needs to be deployed through Microsoft 365 Integrated Apps / Centralized Deployment
 
 ## Important Notes
 

@@ -1,0 +1,60 @@
+/* global Office */
+
+(function () {
+  const FALLBACK_SIGNATURE = `
+    <div style="font-family:Inter,Arial,sans-serif;color:#1f2430;">
+      <strong>DH Website Services</strong><br />
+      <a href="https://dhwebsiteservices.co.uk" style="color:#3b67f2;text-decoration:none;">dhwebsiteservices.co.uk</a><br />
+      <a href="tel:02920024218" style="color:#3b67f2;text-decoration:none;">02920 024218</a>
+    </div>
+  `.trim()
+
+  async function fetchRenderedSignature(email) {
+    const response = await fetch(`/api/signature?email=${encodeURIComponent(email)}`, {
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json' },
+    })
+
+    if (!response.ok) {
+      throw new Error('Could not load rendered signature.')
+    }
+
+    return response.json()
+  }
+
+  function applySignature(html, event) {
+    const item = Office.context?.mailbox?.item
+    if (!item || !item.body || typeof item.body.setSignatureAsync !== 'function') {
+      event.completed()
+      return
+    }
+
+    item.body.setSignatureAsync(
+      html,
+      { coercionType: Office.CoercionType.Html },
+      function () {
+        event.completed()
+      },
+    )
+  }
+
+  async function onNewMessageComposeHandler(event) {
+    try {
+      const email = Office.context?.mailbox?.userProfile?.emailAddress
+      if (!email) {
+        applySignature(FALLBACK_SIGNATURE, event)
+        return
+      }
+
+      const payload = await fetchRenderedSignature(email)
+      applySignature(payload?.rendered?.html || FALLBACK_SIGNATURE, event)
+    } catch (_error) {
+      applySignature(FALLBACK_SIGNATURE, event)
+    }
+  }
+
+  Office.onReady(function () {
+    Office.actions.associate('onNewMessageComposeHandler', onNewMessageComposeHandler)
+    window.onNewMessageComposeHandler = onNewMessageComposeHandler
+  })
+})()
