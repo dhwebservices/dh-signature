@@ -1,5 +1,7 @@
 import type { RenderedSignature, SignatureAssignment, SocialLink } from '@dh-signature/shared-types'
 
+export const SIGNATURE_MARKER = 'DH_SIGNATURE_V1'
+
 function socialIcon(link: SocialLink) {
   switch (link.platform) {
     case 'instagram':
@@ -71,12 +73,11 @@ export function renderSignature({ profile, template, branding }: SignatureAssign
 
   const html = `
     <div style="font-family:Inter,Arial,sans-serif;color:#1f2430;max-width:620px;">
+      <!-- ${SIGNATURE_MARKER} -->
       <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;">
         <tr>
           <td style="vertical-align:top;padding-right:20px;">
-            <div style="width:58px;height:58px;border-radius:18px;background:linear-gradient(145deg, ${template.accentColor}, ${template.secondaryColor});display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;font-weight:700;">
-              ${branding.logoMark}
-            </div>
+            <img src="${branding.logoUrl}" alt="${branding.companyName}" width="58" height="58" style="display:block;width:58px;height:58px;border-radius:18px;object-fit:cover;" />
           </td>
           <td style="vertical-align:top;">
             <div style="font-size:24px;line-height:1.05;font-weight:700;letter-spacing:-0.03em;">${profile.fullName}</div>
@@ -102,6 +103,7 @@ export function renderSignature({ profile, template, branding }: SignatureAssign
   `.trim()
 
   const plainText = [
+    `[${SIGNATURE_MARKER}]`,
     profile.fullName,
     profile.title,
     profile.department,

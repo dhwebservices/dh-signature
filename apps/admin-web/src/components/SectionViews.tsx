@@ -55,6 +55,7 @@ export function BrandKitView({ branding }: { branding: TenantBranding }) {
         <Field label="Workplace label" value={branding.workplaceLabel} />
         <Field label="Booking label" value={branding.bookingLabel} />
         <Field label="Privacy policy" value={branding.privacyPolicyUrl} />
+        <Field label="Logo asset" value={branding.logoUrl} />
       </div>
     </section>
   )

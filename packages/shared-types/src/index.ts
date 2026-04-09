@@ -41,6 +41,7 @@ export interface TenantBranding {
   bookingLabel: string
   privacyPolicyLabel: string
   privacyPolicyUrl: string
+  logoUrl: string
   logoMark: string
 }
 

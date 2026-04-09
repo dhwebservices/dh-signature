@@ -1,8 +1,10 @@
 /* global Office */
 
 (function () {
+  const SIGNATURE_MARKER = 'DH_SIGNATURE_V1'
   const FALLBACK_SIGNATURE = `
     <div style="font-family:Inter,Arial,sans-serif;color:#1f2430;">
+      <!-- ${SIGNATURE_MARKER} -->
       <strong>DH Website Services</strong><br />
       <a href="https://dhwebsiteservices.co.uk" style="color:#3b67f2;text-decoration:none;">dhwebsiteservices.co.uk</a><br />
       <a href="tel:02920024218" style="color:#3b67f2;text-decoration:none;">02920 024218</a>
@@ -38,8 +40,33 @@
     )
   }
 
+  function getCurrentBodyHtml(item) {
+    return new Promise(function (resolve) {
+      if (!item || !item.body || typeof item.body.getAsync !== 'function') {
+        resolve('')
+        return
+      }
+
+      item.body.getAsync(Office.CoercionType.Html, function (result) {
+        if (result.status === Office.AsyncResultStatus.Succeeded) {
+          resolve(result.value || '')
+          return
+        }
+
+        resolve('')
+      })
+    })
+  }
+
   async function onNewMessageComposeHandler(event) {
     try {
+      const item = Office.context?.mailbox?.item
+      const existingBody = await getCurrentBodyHtml(item)
+      if (existingBody && existingBody.includes(SIGNATURE_MARKER)) {
+        event.completed()
+        return
+      }
+
       const email = Office.context?.mailbox?.userProfile?.emailAddress
       if (!email) {
         applySignature(FALLBACK_SIGNATURE, event)
