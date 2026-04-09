@@ -1,9 +1,43 @@
 import type { RenderedSignature, SignatureAssignment, SocialLink } from '@dh-signature/shared-types'
 
+function socialIcon(link: SocialLink) {
+  switch (link.platform) {
+    case 'instagram':
+      return `
+        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3.5" y="3.5" width="17" height="17" rx="5" stroke="currentColor" stroke-width="2"/>
+          <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/>
+          <circle cx="17.5" cy="6.5" r="1.25" fill="currentColor"/>
+        </svg>
+      `
+    case 'facebook':
+      return `
+        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M13.3 20V12.7H15.8L16.2 9.9H13.3V8.15C13.3 7.34 13.54 6.78 14.72 6.78H16.3V4.25C15.53 4.16 14.75 4.12 13.97 4.13C11.66 4.13 10.08 5.48 10.08 7.96V9.9H7.7V12.7H10.08V20H13.3Z" fill="currentColor"/>
+        </svg>
+      `
+    case 'linkedin':
+      return `
+        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="9" width="3.2" height="11" fill="currentColor"/>
+          <circle cx="5.6" cy="5.9" r="1.8" fill="currentColor"/>
+          <path d="M10 9H13.1V10.6H13.15C13.58 9.78 14.64 8.92 16.2 8.92C19.46 8.92 20 11 20 13.72V20H16.8V14.44C16.8 13.12 16.77 11.43 14.96 11.43C13.13 11.43 12.85 12.84 12.85 14.34V20H9.65V9H10Z" fill="currentColor"/>
+        </svg>
+      `
+    case 'whatsapp':
+      return `
+        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 11.9C20 16.22 16.47 19.7 12.12 19.7C10.73 19.7 9.42 19.35 8.27 18.73L4.5 19.93L5.73 16.29C5.05 15.1 4.67 13.72 4.67 12.25C4.67 7.93 8.2 4.45 12.55 4.45C16.9 4.45 20 7.58 20 11.9Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M9.38 8.9C9.64 8.34 9.91 8.33 10.13 8.34C10.31 8.35 10.52 8.35 10.72 8.35C10.92 8.35 11.24 8.27 11.55 8.63C11.85 8.98 12.57 10.17 12.57 10.22C12.57 10.27 12.62 10.38 12.53 10.54C12.45 10.7 12.4 10.78 12.25 10.95C12.1 11.12 11.95 11.28 11.82 11.41C11.67 11.55 11.52 11.71 11.69 11.99C11.86 12.27 12.46 13.22 13.32 13.98C14.43 14.95 15.37 15.25 15.66 15.38C15.95 15.51 16.12 15.49 16.27 15.32C16.42 15.15 16.94 14.55 17.11 14.26C17.28 13.98 17.46 14.03 17.71 14.13C17.96 14.23 19.29 14.87 19.57 15.01C19.85 15.16 20.03 15.23 20.1 15.35C20.17 15.48 20.17 16.05 19.92 16.75C19.67 17.44 18.47 18.1 17.92 18.16C17.38 18.23 16.7 18.45 14.42 17.46C12.14 16.48 10.55 14.11 10.43 13.94C10.31 13.78 9.52 12.72 9.25 11.8C8.98 10.88 9.11 9.47 9.38 8.9Z" fill="currentColor"/>
+        </svg>
+      `
+  }
+}
+
 function socialBadge(link: SocialLink) {
   return `
-    <a href="${link.href}" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:999px;background:rgba(20,31,61,0.06);text-decoration:none;color:#243047;font-size:12px;font-weight:600;">
-      ${link.label.slice(0, 2).toUpperCase()}
+    <a href="${link.href}" aria-label="${link.label}" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:999px;background:rgba(20,31,61,0.06);text-decoration:none;color:#243047;">
+      ${socialIcon(link)}
     </a>
   `
 }
