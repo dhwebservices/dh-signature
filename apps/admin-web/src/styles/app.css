@@ -618,6 +618,42 @@ button, input { font: inherit; }
   overflow-x: auto;
 }
 
+.assignment-groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.assignment-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(248, 250, 255, 0.92);
+  border: 1px solid rgba(20, 31, 61, 0.05);
+}
+
+.assignment-select {
+  display: grid;
+  gap: 6px;
+  min-width: 190px;
+}
+
+.assignment-select.inline {
+  min-width: 0;
+}
+
+.assignment-select select {
+  border: 1px solid rgba(20, 31, 61, 0.1);
+  border-radius: 10px;
+  background: white;
+  color: #162033;
+  padding: 9px 12px;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -845,7 +881,8 @@ button, input { font: inherit; }
 
   .deployment-metrics,
   .audit-summary,
-  .campaign-builder {
+  .campaign-builder,
+  .assignment-groups {
     grid-template-columns: 1fr;
   }
 

@@ -1,6 +1,7 @@
 import type {
   AdminOverviewResponse,
   SignatureActivity,
+  SignatureAssignments,
   SignatureAssignment,
   SignatureCampaign,
   SignatureProfile,
@@ -45,6 +46,7 @@ interface StoredAdminState {
   campaigns?: SignatureCampaign[]
   activity?: SignatureActivity[]
   publishedTemplateId?: string
+  assignments?: Partial<SignatureAssignments>
   profiles?: Array<{
     id?: string
     email?: string
@@ -83,6 +85,14 @@ const defaultCampaigns: SignatureCampaign[] = [
     status: 'Draft',
   },
 ]
+
+function buildDefaultAssignments(): SignatureAssignments {
+  return {
+    publishedTemplateId: signatureTemplates[0]?.id || 'signature-clean',
+    departmentTemplates: {},
+    profileTemplates: {},
+  }
+}
 
 function buildDefaultActivity(profileCount: number): SignatureActivity[] {
   return [
@@ -246,18 +256,25 @@ function mapProfiles(rows: HrProfileRow[], env: Env, stored?: StoredAdminState |
 export async function buildOverview(env: Env): Promise<AdminOverviewResponse & { branding: TenantBranding }> {
   const [rows, stored] = await Promise.all([fetchHrProfiles(env), fetchStoredState(env)])
   const profiles = mapProfiles(rows, env, stored)
+  const defaultAssignments = buildDefaultAssignments()
+  const assignments: SignatureAssignments = {
+    publishedTemplateId: stored?.assignments?.publishedTemplateId || stored?.publishedTemplateId || defaultAssignments.publishedTemplateId,
+    departmentTemplates: stored?.assignments?.departmentTemplates || {},
+    profileTemplates: stored?.assignments?.profileTemplates || {},
+  }
 
   return {
     profiles,
     templates: signatureTemplates,
     campaigns: stored?.campaigns?.length ? stored.campaigns : defaultCampaigns,
     activity: stored?.activity?.length ? stored.activity : buildDefaultActivity(profiles.length),
+    assignments,
     branding: buildBranding(env, stored),
     controls: {
       canActivateTenantWide: true,
       canForceRefresh: true,
       authProvider: 'Microsoft Entra ID',
-      publishedTemplateId: stored?.publishedTemplateId || signatureTemplates[0]?.id,
+      publishedTemplateId: assignments.publishedTemplateId,
     },
   }
 }
@@ -294,8 +311,12 @@ export async function buildAssignmentByEmail(email: string, env: Env): Promise<S
   const overview = await buildOverview(env)
   const normalizedEmail = normalizeEmail(email)
   const profile = overview.profiles.find((item) => item.email === normalizedEmail)
+  const assignedTemplateId =
+    overview.assignments.profileTemplates[normalizedEmail] ||
+    overview.assignments.departmentTemplates[profile?.department || ''] ||
+    overview.assignments.publishedTemplateId
   const activeTemplate =
-    overview.templates.find((template) => template.id === overview.controls.publishedTemplateId) ||
+    overview.templates.find((template) => template.id === assignedTemplateId) ||
     overview.templates[0]
 
   if (!profile) {

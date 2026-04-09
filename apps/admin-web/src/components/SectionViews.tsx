@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { PauseCircle, PlayCircle, RefreshCcw, ShieldCheck } from 'lucide-react'
-import type { SignatureProfile, SignatureTemplate, TenantBranding } from '@dh-signature/shared-types'
+import type { SignatureAssignments, SignatureProfile, SignatureTemplate, TenantBranding } from '@dh-signature/shared-types'
 
 interface CampaignItem {
   id: string
@@ -12,13 +12,30 @@ interface CampaignItem {
 
 export function AssignmentsView({
   profiles,
+  templates,
+  assignments,
   onToggleSignature,
   onQueueRefresh,
+  onAssignProfileTemplate,
+  onAssignDepartmentTemplate,
 }: {
   profiles: SignatureProfile[]
+  templates: SignatureTemplate[]
+  assignments: SignatureAssignments
   onToggleSignature: (profileId: string) => void
   onQueueRefresh: (profileId: string) => void
+  onAssignProfileTemplate: (profileEmail: string, templateId: string) => void
+  onAssignDepartmentTemplate: (department: string, templateId: string) => void
 }) {
+  const departmentRows = useMemo(() => {
+    const departments = new Map<string, number>()
+    for (const profile of profiles) {
+      const key = profile.department || 'Unassigned department'
+      departments.set(key, (departments.get(key) || 0) + 1)
+    }
+    return Array.from(departments.entries()).sort((a, b) => a[0].localeCompare(b[0]))
+  }, [profiles])
+
   return (
     <section className="panel">
       <div className="panel-header">
@@ -27,12 +44,34 @@ export function AssignmentsView({
           <div className="panel-title">Active user coverage</div>
         </div>
       </div>
+      <div className="assignment-groups">
+        {departmentRows.map(([department, count]) => (
+          <div key={department} className="assignment-card">
+            <div>
+              <div className="table-main">{department}</div>
+              <div className="table-sub">{count} staff rows</div>
+            </div>
+            <label className="assignment-select">
+              <span className="field-label">Department template</span>
+              <select
+                value={assignments.departmentTemplates[department] || assignments.publishedTemplateId}
+                onChange={(event) => onAssignDepartmentTemplate(department, event.target.value)}
+              >
+                {templates.map((template) => (
+                  <option key={template.id} value={template.id}>{template.name}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        ))}
+      </div>
       <div className="table-shell">
         <table className="data-table">
           <thead>
             <tr>
               <th>Staff member</th>
               <th>Department</th>
+              <th>Template</th>
               <th>Status</th>
               <th>Refresh</th>
               <th>Actions</th>
@@ -46,6 +85,22 @@ export function AssignmentsView({
                   <div className="table-sub">{profile.title || profile.email}</div>
                 </td>
                 <td>{profile.department || 'Unassigned'}</td>
+                <td>
+                  <label className="assignment-select inline">
+                    <select
+                      value={
+                        assignments.profileTemplates[profile.email.toLowerCase()] ||
+                        assignments.departmentTemplates[profile.department] ||
+                        assignments.publishedTemplateId
+                      }
+                      onChange={(event) => onAssignProfileTemplate(profile.email, event.target.value)}
+                    >
+                      {templates.map((template) => (
+                        <option key={template.id} value={template.id}>{template.name}</option>
+                      ))}
+                    </select>
+                  </label>
+                </td>
                 <td>{profile.signatureEnabled ? 'Active' : 'Inactive'}</td>
                 <td>{profile.forceRefreshRequired ? 'Force update queued' : 'Healthy'}</td>
                 <td>

@@ -1,4 +1,4 @@
-import type { AdminOverviewResponse, RenderedSignature, SignatureActivity, SignatureCampaign, TenantBranding } from '@dh-signature/shared-types'
+import type { AdminOverviewResponse, RenderedSignature, SignatureActivity, SignatureAssignments, SignatureCampaign, TenantBranding } from '@dh-signature/shared-types'
 
 export async function fetchOverview() {
   const response = await fetch('/api/admin/overview')
@@ -19,6 +19,7 @@ export async function saveAdminState(state: {
   campaigns: SignatureCampaign[]
   activity: SignatureActivity[]
   publishedTemplateId: string
+  assignments: SignatureAssignments
   profiles: Array<{
     id: string
     email: string

@@ -77,11 +77,18 @@ export interface SignatureActivity {
   createdAt: string
 }
 
+export interface SignatureAssignments {
+  publishedTemplateId: string
+  departmentTemplates: Record<string, string>
+  profileTemplates: Record<string, string>
+}
+
 export interface AdminOverviewResponse {
   profiles: SignatureProfile[]
   templates: SignatureTemplate[]
   campaigns: SignatureCampaign[]
   activity: SignatureActivity[]
+  assignments: SignatureAssignments
   controls: {
     canActivateTenantWide: boolean
     canForceRefresh: boolean

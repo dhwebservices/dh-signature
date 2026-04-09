@@ -2,7 +2,7 @@ import { AuthenticatedTemplate, MsalProvider, UnauthenticatedTemplate, useMsal }
 import { PublicClientApplication } from '@azure/msal-browser'
 import { useEffect, useMemo, useState } from 'react'
 import { renderSignature } from '@dh-signature/signature-renderer'
-import type { SignatureActivity, SignatureCampaign, SignatureProfile, SignatureTemplate, TenantBranding } from '@dh-signature/shared-types'
+import type { SignatureActivity, SignatureAssignments, SignatureCampaign, SignatureProfile, SignatureTemplate, TenantBranding } from '@dh-signature/shared-types'
 import { signatureTemplates, tenantBranding } from '@dh-signature/shared-types'
 import { Sidebar, type AdminSection } from './components/Sidebar'
 import { Topbar } from './components/Topbar'
@@ -72,6 +72,11 @@ function AuthedApp() {
   const [brandingState, setBrandingState] = useState<TenantBranding>(tenantBranding)
   const [campaigns, setCampaigns] = useState<SignatureCampaign[]>(initialCampaigns)
   const [activityFeed, setActivityFeed] = useState<SignatureActivity[]>([])
+  const [assignments, setAssignments] = useState<SignatureAssignments>({
+    publishedTemplateId: signatureTemplates[0].id,
+    departmentTemplates: {},
+    profileTemplates: {},
+  })
   const [notificationOpen, setNotificationOpen] = useState(false)
   const [publishOpen, setPublishOpen] = useState(false)
   const [publishTitle, setPublishTitle] = useState('Spring rollout update')
@@ -140,6 +145,11 @@ function AuthedApp() {
         setTemplatesState(response.templates)
         setBrandingState(response.branding ?? tenantBranding)
         setCampaigns(response.campaigns?.length ? response.campaigns : initialCampaigns)
+        setAssignments(response.assignments || {
+          publishedTemplateId: response.controls?.publishedTemplateId || response.templates[0]?.id || signatureTemplates[0].id,
+          departmentTemplates: {},
+          profileTemplates: {},
+        })
         setActiveMicrosoftEmails(directorySync.emails)
         setDirectorySyncError(directorySync.error)
         setProfileId((current) => response.profiles.find((profile) => profile.id === current)?.id ?? response.profiles[0]?.id ?? '')
@@ -183,6 +193,10 @@ function AuthedApp() {
           campaigns,
           activity: activityFeed,
           publishedTemplateId,
+          assignments: {
+            ...assignments,
+            publishedTemplateId,
+          },
           profiles: profilesState.map((profile) => ({
             id: profile.id,
             email: profile.email,
@@ -199,7 +213,7 @@ function AuthedApp() {
     }, 450)
 
     return () => window.clearTimeout(timeout)
-  }, [brandingState, campaigns, activityFeed, profilesState, publishedTemplateId, hydrated, loading, error])
+  }, [brandingState, campaigns, activityFeed, profilesState, publishedTemplateId, assignments, hydrated, loading, error])
 
   const profiles = useMemo(() => {
     if (!activeMicrosoftEmails || activeMicrosoftEmails.size === 0) return profilesState
@@ -315,6 +329,31 @@ function AuthedApp() {
     setToast('Brand kit saved')
   }
 
+  function handleAssignProfileTemplate(profileEmail: string, nextTemplateId: string) {
+    setAssignments((current) => ({
+      ...current,
+      profileTemplates: {
+        ...current.profileTemplates,
+        [profileEmail.toLowerCase()]: nextTemplateId,
+      },
+    }))
+    const matched = profiles.find((profile) => profile.email.toLowerCase() === profileEmail.toLowerCase())
+    pushActivity('Profile template assigned', `${matched?.fullName || profileEmail} now uses ${templatesState.find((template) => template.id === nextTemplateId)?.name || nextTemplateId}.`)
+    setToast('Profile template saved')
+  }
+
+  function handleAssignDepartmentTemplate(department: string, nextTemplateId: string) {
+    setAssignments((current) => ({
+      ...current,
+      departmentTemplates: {
+        ...current.departmentTemplates,
+        [department]: nextTemplateId,
+      },
+    }))
+    pushActivity('Department template assigned', `${department} now defaults to ${templatesState.find((template) => template.id === nextTemplateId)?.name || nextTemplateId}.`)
+    setToast('Department template saved')
+  }
+
   function handlePublishUpdate() {
     const title = publishTitle.trim()
     const body = publishBody.trim()
@@ -324,6 +363,7 @@ function AuthedApp() {
     }
     pushActivity(title, body)
     setPublishedTemplateId(templateId)
+    setAssignments((current) => ({ ...current, publishedTemplateId: templateId }))
     setPublishOpen(false)
     setNotificationOpen(true)
     setToast('Update published')
@@ -440,8 +480,12 @@ function AuthedApp() {
             {activeSection === 'Assignments' ? (
               <AssignmentsView
                 profiles={filteredProfiles}
+                templates={templatesState}
+                assignments={assignments}
                 onQueueRefresh={handleQueueRefresh}
                 onToggleSignature={handleToggleSignature}
+                onAssignDepartmentTemplate={handleAssignDepartmentTemplate}
+                onAssignProfileTemplate={handleAssignProfileTemplate}
               />
             ) : null}
             {activeSection === 'Brand kit' ? (
