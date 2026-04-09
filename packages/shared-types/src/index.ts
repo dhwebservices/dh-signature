@@ -62,9 +62,26 @@ export interface AdminUser {
   role: 'SignatureAdmin' | 'Viewer'
 }
 
+export interface SignatureCampaign {
+  id: string
+  name: string
+  ctaLabel: string
+  audience: string
+  status: 'Draft' | 'Live' | 'Paused'
+}
+
+export interface SignatureActivity {
+  id: string
+  title: string
+  body: string
+  createdAt: string
+}
+
 export interface AdminOverviewResponse {
   profiles: SignatureProfile[]
   templates: SignatureTemplate[]
+  campaigns: SignatureCampaign[]
+  activity: SignatureActivity[]
   controls: {
     canActivateTenantWide: boolean
     canForceRefresh: boolean

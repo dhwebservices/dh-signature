@@ -1,6 +1,8 @@
 import type {
   AdminOverviewResponse,
+  SignatureActivity,
   SignatureAssignment,
+  SignatureCampaign,
   SignatureProfile,
   SignatureTemplate,
   TenantBranding,
@@ -33,6 +35,26 @@ interface HrProfileRow {
   created_at?: string
 }
 
+interface PortalSettingRow {
+  key?: string
+  value?: unknown
+}
+
+interface StoredAdminState {
+  branding?: Partial<TenantBranding>
+  campaigns?: SignatureCampaign[]
+  activity?: SignatureActivity[]
+  profiles?: Array<{
+    id?: string
+    email?: string
+    signatureEnabled?: boolean
+    forceRefreshRequired?: boolean
+    lastSyncedAt?: string
+  }>
+}
+
+const ADMIN_STATE_KEY = 'dh_signature:admin_state'
+
 const normalizeEmail = (value = '') => value.trim().toLowerCase()
 
 const firstNonEmpty = (...values: Array<string | null | undefined>) => {
@@ -42,6 +64,34 @@ const firstNonEmpty = (...values: Array<string | null | undefined>) => {
     if (trimmed) return trimmed
   }
   return ''
+}
+
+const defaultCampaigns: SignatureCampaign[] = [
+  {
+    id: 'launch-consistency',
+    name: 'Signature consistency launch',
+    ctaLabel: 'Book a call',
+    audience: 'All staff mailboxes',
+    status: 'Live',
+  },
+  {
+    id: 'client-ops-cta',
+    name: 'Client Ops follow-up CTA',
+    ctaLabel: 'DH Workplace',
+    audience: 'Client Operations',
+    status: 'Draft',
+  },
+]
+
+function buildDefaultActivity(profileCount: number): SignatureActivity[] {
+  return [
+    {
+      id: 'tenant-data-synced',
+      title: 'Tenant data synced',
+      body: `Loaded ${profileCount} staff records from the live signature data source.`,
+      createdAt: new Date().toISOString(),
+    },
+  ]
 }
 
 const pickBestProfileRow = (rows: HrProfileRow[]) =>
@@ -59,7 +109,18 @@ const pickBestProfileRow = (rows: HrProfileRow[]) =>
       return new Date(b.updated_at || b.created_at || 0).getTime() - new Date(a.updated_at || a.created_at || 0).getTime()
     })[0] || null
 
-function buildBranding(env: Env): TenantBranding {
+function createSupabaseHeaders(env: Env) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in Cloudflare Pages environment variables.')
+  }
+
+  return {
+    apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+    Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+  }
+}
+
+function buildBranding(env: Env, stored?: StoredAdminState): TenantBranding {
   const configuredLogoUrl = env.DH_LOGO_URL || tenantBranding.logoUrl
   const normalizedLogoUrl = configuredLogoUrl.endsWith('/icons/dh-logo.png')
     ? configuredLogoUrl.replace('/icons/dh-logo.png', '/icons/dh-logo-icon.png')
@@ -67,9 +128,10 @@ function buildBranding(env: Env): TenantBranding {
 
   return {
     ...tenantBranding,
-    companyWebsiteLabel: env.DH_WEBSITE_URL ? new URL(env.DH_WEBSITE_URL).host.replace(/^www\./, '') : tenantBranding.companyWebsiteLabel,
-    privacyPolicyUrl: env.DH_PRIVACY_POLICY_URL || tenantBranding.privacyPolicyUrl,
-    logoUrl: normalizedLogoUrl,
+    ...stored?.branding,
+    companyWebsiteLabel: env.DH_WEBSITE_URL ? new URL(env.DH_WEBSITE_URL).host.replace(/^www\./, '') : stored?.branding?.companyWebsiteLabel || tenantBranding.companyWebsiteLabel,
+    privacyPolicyUrl: env.DH_PRIVACY_POLICY_URL || stored?.branding?.privacyPolicyUrl || tenantBranding.privacyPolicyUrl,
+    logoUrl: stored?.branding?.logoUrl || normalizedLogoUrl,
   }
 }
 
@@ -105,20 +167,12 @@ function getGlobalLinks(env: Env) {
 }
 
 async function fetchHrProfiles(env: Env): Promise<HrProfileRow[]> {
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in Cloudflare Pages environment variables.')
-  }
-
+  const headers = createSupabaseHeaders(env)
   const url = new URL('/rest/v1/hr_profiles', env.SUPABASE_URL)
   url.searchParams.set('select', 'id,user_email,full_name,role,department,phone,updated_at,created_at')
   url.searchParams.set('order', 'updated_at.desc.nullslast,created_at.desc.nullslast')
 
-  const response = await fetch(url.toString(), {
-    headers: {
-      apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-    },
-  })
+  const response = await fetch(url.toString(), { headers })
 
   if (!response.ok) {
     const message = await response.text()
@@ -128,7 +182,23 @@ async function fetchHrProfiles(env: Env): Promise<HrProfileRow[]> {
   return (await response.json()) as HrProfileRow[]
 }
 
-function mapProfiles(rows: HrProfileRow[], env: Env): SignatureProfile[] {
+async function fetchStoredState(env: Env): Promise<StoredAdminState | null> {
+  const headers = createSupabaseHeaders(env)
+  const url = new URL('/rest/v1/portal_settings', env.SUPABASE_URL)
+  url.searchParams.set('select', 'key,value')
+  url.searchParams.set('key', `eq.${ADMIN_STATE_KEY}`)
+  url.searchParams.set('limit', '1')
+
+  const response = await fetch(url.toString(), { headers })
+  if (!response.ok) return null
+
+  const rows = (await response.json()) as PortalSettingRow[]
+  const value = rows[0]?.value
+  if (!value || typeof value !== 'object') return null
+  return value as StoredAdminState
+}
+
+function mapProfiles(rows: HrProfileRow[], env: Env, stored?: StoredAdminState | null): SignatureProfile[] {
   const byEmail = new Map<string, HrProfileRow[]>()
 
   for (const row of rows) {
@@ -139,11 +209,17 @@ function mapProfiles(rows: HrProfileRow[], env: Env): SignatureProfile[] {
   }
 
   const globalLinks = getGlobalLinks(env)
+  const storedProfiles = new Map(
+    (stored?.profiles || [])
+      .filter((profile) => profile.email)
+      .map((profile) => [normalizeEmail(profile.email || ''), profile]),
+  )
 
   return Array.from(byEmail.entries())
     .map(([email, candidates]) => {
       const row = pickBestProfileRow(candidates)
       if (!row) return null
+      const saved = storedProfiles.get(email)
 
       return {
         id: `profile-${email}`,
@@ -157,9 +233,9 @@ function mapProfiles(rows: HrProfileRow[], env: Env): SignatureProfile[] {
         workplaceUrl: globalLinks.workplaceUrl,
         bookingUrl: globalLinks.bookingUrl,
         socialLinks: globalLinks.socialLinks,
-        signatureEnabled: true,
-        forceRefreshRequired: false,
-        lastSyncedAt: row.updated_at || row.created_at || new Date().toISOString(),
+        signatureEnabled: saved?.signatureEnabled ?? true,
+        forceRefreshRequired: saved?.forceRefreshRequired ?? false,
+        lastSyncedAt: saved?.lastSyncedAt || row.updated_at || row.created_at || new Date().toISOString(),
       } satisfies SignatureProfile
     })
     .filter((profile): profile is SignatureProfile => Boolean(profile))
@@ -167,18 +243,48 @@ function mapProfiles(rows: HrProfileRow[], env: Env): SignatureProfile[] {
 }
 
 export async function buildOverview(env: Env): Promise<AdminOverviewResponse & { branding: TenantBranding }> {
-  const rows = await fetchHrProfiles(env)
-  const profiles = mapProfiles(rows, env)
+  const [rows, stored] = await Promise.all([fetchHrProfiles(env), fetchStoredState(env)])
+  const profiles = mapProfiles(rows, env, stored)
 
   return {
     profiles,
     templates: signatureTemplates,
-    branding: buildBranding(env),
+    campaigns: stored?.campaigns?.length ? stored.campaigns : defaultCampaigns,
+    activity: stored?.activity?.length ? stored.activity : buildDefaultActivity(profiles.length),
+    branding: buildBranding(env, stored),
     controls: {
       canActivateTenantWide: true,
       canForceRefresh: true,
       authProvider: 'Microsoft Entra ID',
     },
+  }
+}
+
+export async function saveAdminState(env: Env, state: StoredAdminState) {
+  const headers = createSupabaseHeaders(env)
+  const url = new URL('/rest/v1/portal_settings', env.SUPABASE_URL)
+  url.searchParams.set('on_conflict', 'key')
+
+  const payload = [
+    {
+      key: ADMIN_STATE_KEY,
+      value: state,
+    },
+  ]
+
+  const response = await fetch(url.toString(), {
+    method: 'POST',
+    headers: {
+      ...headers,
+      'content-type': 'application/json',
+      Prefer: 'resolution=merge-duplicates,return=minimal',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) {
+    const message = await response.text()
+    throw new Error(`Could not save signature admin state: ${response.status} ${message}`)
   }
 }
 

@@ -2,7 +2,7 @@ import { AuthenticatedTemplate, MsalProvider, UnauthenticatedTemplate, useMsal }
 import { PublicClientApplication } from '@azure/msal-browser'
 import { useEffect, useMemo, useState } from 'react'
 import { renderSignature } from '@dh-signature/signature-renderer'
-import type { SignatureProfile, SignatureTemplate, TenantBranding } from '@dh-signature/shared-types'
+import type { SignatureActivity, SignatureCampaign, SignatureProfile, SignatureTemplate, TenantBranding } from '@dh-signature/shared-types'
 import { signatureTemplates, tenantBranding } from '@dh-signature/shared-types'
 import { Sidebar, type AdminSection } from './components/Sidebar'
 import { Topbar } from './components/Topbar'
@@ -13,26 +13,12 @@ import { LoginScreen } from './components/LoginScreen'
 import { UserRoster } from './components/UserRoster'
 import { loginRequest, msalConfig } from './authConfig'
 import { AuditView, AssignmentsView, BrandKitView, CampaignsView, DeploymentView } from './components/SectionViews'
-import { fetchOverview } from './lib/api'
+import { fetchOverview, saveAdminState } from './lib/api'
 
 const msalInstance = new PublicClientApplication(msalConfig)
 
 type CampaignStatus = 'Draft' | 'Live' | 'Paused'
-
-interface CampaignItem {
-  id: string
-  name: string
-  ctaLabel: string
-  audience: string
-  status: CampaignStatus
-}
-
-interface ActivityItem {
-  id: string
-  title: string
-  body: string
-  createdAt: string
-}
+type CampaignItem = SignatureCampaign & { status: CampaignStatus }
 
 const initialCampaigns: CampaignItem[] = [
   {
@@ -55,7 +41,7 @@ function nowIso() {
   return new Date().toISOString()
 }
 
-function buildActivity(title: string, body: string): ActivityItem {
+function buildActivity(title: string, body: string): SignatureActivity {
   return {
     id: `${title}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     title,
@@ -84,8 +70,8 @@ function AuthedApp() {
   const [profilesState, setProfilesState] = useState<SignatureProfile[]>([])
   const [templatesState, setTemplatesState] = useState<SignatureTemplate[]>(signatureTemplates)
   const [brandingState, setBrandingState] = useState<TenantBranding>(tenantBranding)
-  const [campaigns, setCampaigns] = useState<CampaignItem[]>(initialCampaigns)
-  const [activityFeed, setActivityFeed] = useState<ActivityItem[]>([])
+  const [campaigns, setCampaigns] = useState<SignatureCampaign[]>(initialCampaigns)
+  const [activityFeed, setActivityFeed] = useState<SignatureActivity[]>([])
   const [notificationOpen, setNotificationOpen] = useState(false)
   const [publishOpen, setPublishOpen] = useState(false)
   const [publishTitle, setPublishTitle] = useState('Spring rollout update')
@@ -95,6 +81,8 @@ function AuthedApp() {
   const [activeMicrosoftEmails, setActiveMicrosoftEmails] = useState<Set<string> | null>(null)
   const [directorySyncError, setDirectorySyncError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [hydrated, setHydrated] = useState(false)
+  const [savingState, setSavingState] = useState(false)
   const [error, setError] = useState('')
   const [templateId, setTemplateId] = useState(signatureTemplates[0].id)
   const [profileId, setProfileId] = useState('')
@@ -150,18 +138,24 @@ function AuthedApp() {
         if (cancelled) return
         setTemplatesState(response.templates)
         setBrandingState(response.branding ?? tenantBranding)
+        setCampaigns(response.campaigns?.length ? response.campaigns : initialCampaigns)
         setActiveMicrosoftEmails(directorySync.emails)
         setDirectorySyncError(directorySync.error)
         setProfileId((current) => response.profiles.find((profile) => profile.id === current)?.id ?? response.profiles[0]?.id ?? '')
-        setActivityFeed([
-          buildActivity('Tenant data synced', `Loaded ${response.profiles.length} staff records from the live signature data source.`),
-          buildActivity('Admin session started', 'Microsoft Entra sign-in completed and signature controls are available.'),
-        ])
+        setActivityFeed(
+          response.activity?.length
+            ? response.activity
+            : [
+                buildActivity('Tenant data synced', `Loaded ${response.profiles.length} staff records from the live signature data source.`),
+                buildActivity('Admin session started', 'Microsoft Entra sign-in completed and signature controls are available.'),
+              ],
+        )
         setProfilesState(() => {
           if (!directorySync.emails || directorySync.emails.size === 0) return response.profiles
           return response.profiles.filter((profile) => directorySync.emails.has(profile.email.toLowerCase()))
         })
         setTemplateId((current) => response.templates.find((template) => template.id === current)?.id ?? response.templates[0]?.id ?? current)
+        setHydrated(true)
       } catch (loadError) {
         if (cancelled) return
         setError(loadError instanceof Error ? loadError.message : 'Could not load tenant overview.')
@@ -175,6 +169,34 @@ function AuthedApp() {
       cancelled = true
     }
   }, [accounts, instance])
+
+  useEffect(() => {
+    if (!hydrated || loading || error) return
+
+    const timeout = window.setTimeout(async () => {
+      try {
+        setSavingState(true)
+        await saveAdminState({
+          branding: brandingState,
+          campaigns,
+          activity: activityFeed,
+          profiles: profilesState.map((profile) => ({
+            id: profile.id,
+            email: profile.email,
+            signatureEnabled: profile.signatureEnabled,
+            forceRefreshRequired: profile.forceRefreshRequired,
+            lastSyncedAt: profile.lastSyncedAt,
+          })),
+        })
+      } catch {
+        setToast('Could not save admin state')
+      } finally {
+        setSavingState(false)
+      }
+    }, 450)
+
+    return () => window.clearTimeout(timeout)
+  }, [brandingState, campaigns, activityFeed, profilesState, hydrated, loading, error])
 
   const profiles = useMemo(() => {
     if (!activeMicrosoftEmails || activeMicrosoftEmails.size === 0) return profilesState
@@ -361,6 +383,7 @@ function AuthedApp() {
           onPublishClick={() => setPublishOpen(true)}
         />
         {toast ? <div className="toast-banner">{toast}</div> : null}
+        {savingState ? <div className="save-indicator">Saving tenant changes…</div> : null}
         <main className="page-grid">
           <div className="page-primary">
             <section className="hero-panel">
