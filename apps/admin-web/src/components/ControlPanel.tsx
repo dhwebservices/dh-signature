@@ -37,8 +37,7 @@ export function ControlPanel({
           <Field label="Name" value={profile.fullName} />
           <Field label="Title" value={profile.title} />
           <Field label="Department" value={profile.department} />
-          <Field label="Work phone" value={profile.workPhone} />
-          <Field label="Landline" value={profile.businessLandline} />
+          <Field label="Signature number" value={profile.businessLandline} />
         </div>
       </div>
 

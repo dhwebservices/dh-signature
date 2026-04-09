@@ -84,8 +84,7 @@ export function renderSignature({ profile, template, branding }: SignatureAssign
             ${departmentChip}
             <div style="height:14px"></div>
             <div style="font-size:13px;line-height:1.8;color:#334155;">
-              <strong style="font-weight:600;">T</strong> <a href="tel:${profile.workPhone}" style="color:${template.secondaryColor};text-decoration:none;">${profile.workPhone}</a><br />
-              <strong style="font-weight:600;">B</strong> <a href="tel:${profile.businessLandline}" style="color:${template.secondaryColor};text-decoration:none;">${profile.businessLandline}</a><br />
+              <strong style="font-weight:600;">P</strong> <a href="tel:${profile.businessLandline}" style="color:${template.secondaryColor};text-decoration:none;">${profile.businessLandline}</a><br />
               <strong style="font-weight:600;">W</strong> <a href="${profile.websiteUrl}" style="color:${template.secondaryColor};text-decoration:none;">${branding.companyWebsiteLabel}</a><br />
               ${workplaceLink ? `<strong style="font-weight:600;">D</strong> ${workplaceLink}<br />` : ''}
             </div>
@@ -106,8 +105,7 @@ export function renderSignature({ profile, template, branding }: SignatureAssign
     profile.fullName,
     profile.title,
     profile.department,
-    `T ${profile.workPhone}`,
-    `B ${profile.businessLandline}`,
+    `P ${profile.businessLandline}`,
     branding.companyWebsiteLabel,
     template.showWorkplaceLink ? branding.workplaceLabel : '',
     template.showBookingCta ? branding.bookingLabel : '',

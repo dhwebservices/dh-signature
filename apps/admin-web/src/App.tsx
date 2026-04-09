@@ -137,7 +137,6 @@ function AuthedApp() {
           <div className="page-primary">
             <section className="hero-panel">
               <div className="hero-copy">
-                <div className="hero-kicker">DH-owned WiseStamp replacement</div>
                 <h2>{hero.title}</h2>
                 <p>{hero.body}</p>
               </div>
