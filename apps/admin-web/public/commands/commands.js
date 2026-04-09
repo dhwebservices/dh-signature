@@ -53,8 +53,17 @@
     }
   }
 
-  Office.onReady(function () {
+  window.onNewMessageComposeHandler = onNewMessageComposeHandler
+
+  if (typeof Office !== 'undefined' && Office.actions && typeof Office.actions.associate === 'function') {
     Office.actions.associate('onNewMessageComposeHandler', onNewMessageComposeHandler)
-    window.onNewMessageComposeHandler = onNewMessageComposeHandler
-  })
+  }
+
+  if (typeof Office !== 'undefined' && typeof Office.onReady === 'function') {
+    Office.onReady(function () {
+      if (Office.actions && typeof Office.actions.associate === 'function') {
+        Office.actions.associate('onNewMessageComposeHandler', onNewMessageComposeHandler)
+      }
+    })
+  }
 })()

@@ -42,12 +42,18 @@
     </Requirements>
     <Hosts>
       <Host xsi:type="MailHost">
+        <Runtimes>
+          <Runtime resid="Autorun.Url">
+            <Override type="javascript" resid="Autorun.Script" />
+          </Runtime>
+        </Runtimes>
         <DesktopFormFactor>
+          <FunctionFile resid="Commands.Url" />
           <ExtensionPoint xsi:type="LaunchEvent">
             <LaunchEvents>
               <LaunchEvent Type="OnNewMessageCompose" FunctionName="onNewMessageComposeHandler" SendMode="SoftBlock" />
             </LaunchEvents>
-            <SourceLocation resid="Commands.Url" />
+            <SourceLocation resid="Autorun.Url" />
           </ExtensionPoint>
         </DesktopFormFactor>
       </Host>
@@ -55,6 +61,8 @@
     <Resources>
       <bt:Urls>
         <bt:Url id="Commands.Url" DefaultValue="https://sig.dhwebsiteservices.co.uk/commands/commands.html" />
+        <bt:Url id="Autorun.Url" DefaultValue="https://sig.dhwebsiteservices.co.uk/commands/commands.html" />
+        <bt:Url id="Autorun.Script" DefaultValue="https://sig.dhwebsiteservices.co.uk/commands/commands.js" />
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GroupLabel" DefaultValue="DH Signature" />
