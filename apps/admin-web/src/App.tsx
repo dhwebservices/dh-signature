@@ -29,10 +29,11 @@ export function App() {
 }
 
 function AuthedApp() {
-  const { accounts } = useMsal()
+  const { accounts, instance } = useMsal()
   const [activeSection, setActiveSection] = useState<AdminSection>('Templates')
   const [searchValue, setSearchValue] = useState('')
   const [overview, setOverview] = useState<(AdminOverviewResponse & { branding?: TenantBranding }) | null>(null)
+  const [activeMicrosoftEmails, setActiveMicrosoftEmails] = useState<Set<string> | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [templateId, setTemplateId] = useState(signatureTemplates[0].id)
@@ -41,13 +42,43 @@ function AuthedApp() {
   useEffect(() => {
     let cancelled = false
 
+    async function loadMicrosoftDirectoryEmails() {
+      const account = accounts[0]
+      if (!account) return null
+
+      try {
+        const token = await instance
+          .acquireTokenSilent({ scopes: ['https://graph.microsoft.com/User.Read.All'], account })
+          .catch(() => instance.acquireTokenPopup({ scopes: ['https://graph.microsoft.com/User.Read.All'], account }))
+
+        const response = await fetch('https://graph.microsoft.com/v1.0/users?$select=userPrincipalName,accountEnabled&$top=999', {
+          headers: { Authorization: `Bearer ${token.accessToken}` },
+        })
+
+        if (!response.ok) return null
+        const data = await response.json()
+        const emails = new Set<string>()
+
+        for (const row of data.value || []) {
+          const email = String(row.userPrincipalName || '').trim().toLowerCase()
+          if (!email || row.accountEnabled === false) continue
+          emails.add(email)
+        }
+
+        return emails
+      } catch {
+        return null
+      }
+    }
+
     async function loadOverview() {
       try {
         setLoading(true)
         setError('')
-        const response = await fetchOverview()
+        const [response, microsoftEmails] = await Promise.all([fetchOverview(), loadMicrosoftDirectoryEmails()])
         if (cancelled) return
         setOverview(response)
+        setActiveMicrosoftEmails(microsoftEmails)
         setTemplateId((current) => response.templates.find((template) => template.id === current)?.id ?? response.templates[0]?.id ?? current)
         setProfileId((current) => response.profiles.find((profile) => profile.id === current)?.id ?? response.profiles[0]?.id ?? '')
       } catch (loadError) {
@@ -64,7 +95,12 @@ function AuthedApp() {
     }
   }, [])
 
-  const profiles = useMemo(() => overview?.profiles ?? [], [overview])
+  const profiles = useMemo(() => {
+    const baseProfiles = overview?.profiles ?? []
+    if (!activeMicrosoftEmails || activeMicrosoftEmails.size === 0) return baseProfiles
+
+    return baseProfiles.filter((profile) => activeMicrosoftEmails.has(profile.email.toLowerCase()))
+  }, [overview, activeMicrosoftEmails])
   const templates = useMemo(() => overview?.templates ?? signatureTemplates, [overview])
   const branding = overview?.branding ?? tenantBranding
 

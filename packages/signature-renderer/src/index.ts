@@ -76,8 +76,8 @@ export function renderSignature({ profile, template, branding }: SignatureAssign
       <!-- ${SIGNATURE_MARKER} -->
       <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;">
         <tr>
-          <td style="vertical-align:top;padding-right:20px;">
-            <img src="${branding.logoUrl}" alt="${branding.companyName}" width="58" height="58" style="display:block;width:58px;height:58px;border-radius:18px;object-fit:cover;" />
+          <td style="vertical-align:top;padding-right:18px;width:118px;">
+            <img src="${branding.logoUrl}" alt="${branding.companyName}" width="100" height="52" style="display:block;width:100px;height:52px;object-fit:contain;" />
           </td>
           <td style="vertical-align:top;">
             <div style="font-size:24px;line-height:1.05;font-weight:700;letter-spacing:-0.03em;">${profile.fullName}</div>
