@@ -86,6 +86,7 @@ export interface AdminOverviewResponse {
     canActivateTenantWide: boolean
     canForceRefresh: boolean
     authProvider: string
+    publishedTemplateId?: string
   }
 }
 

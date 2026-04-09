@@ -24,6 +24,16 @@
     return response.json()
   }
 
+  function resolveSenderEmail(item) {
+    const mailboxEmail = Office.context?.mailbox?.userProfile?.emailAddress
+
+    if (item?.from?.emailAddress) {
+      return item.from.emailAddress
+    }
+
+    return mailboxEmail || ''
+  }
+
   function applySignature(html, event) {
     const item = Office.context?.mailbox?.item
     if (!item || !item.body || typeof item.body.setSignatureAsync !== 'function') {
@@ -40,34 +50,10 @@
     )
   }
 
-  function getCurrentBodyHtml(item) {
-    return new Promise(function (resolve) {
-      if (!item || !item.body || typeof item.body.getAsync !== 'function') {
-        resolve('')
-        return
-      }
-
-      item.body.getAsync(Office.CoercionType.Html, function (result) {
-        if (result.status === Office.AsyncResultStatus.Succeeded) {
-          resolve(result.value || '')
-          return
-        }
-
-        resolve('')
-      })
-    })
-  }
-
   async function onNewMessageComposeHandler(event) {
     try {
       const item = Office.context?.mailbox?.item
-      const existingBody = await getCurrentBodyHtml(item)
-      if (existingBody && existingBody.includes(SIGNATURE_MARKER)) {
-        event.completed()
-        return
-      }
-
-      const email = Office.context?.mailbox?.userProfile?.emailAddress
+      const email = resolveSenderEmail(item)
       if (!email) {
         applySignature(FALLBACK_SIGNATURE, event)
         return

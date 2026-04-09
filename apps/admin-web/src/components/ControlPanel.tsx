@@ -4,6 +4,7 @@ export function ControlPanel({
   profile,
   template,
   branding,
+  publishedTemplateName,
   onActivateAllUsers,
   onForceTenantRefresh,
   onCopySignatureHtml,
@@ -12,6 +13,7 @@ export function ControlPanel({
   profile: SignatureProfile
   template: SignatureTemplate
   branding: TenantBranding
+  publishedTemplateName: string
   onActivateAllUsers: () => void
   onForceTenantRefresh: () => void
   onCopySignatureHtml: () => void | Promise<void>
@@ -66,8 +68,9 @@ export function ControlPanel({
         <div className="deployment-list">
           <div className="deployment-row"><span>Compose-time Outlook add-in</span><strong>Enabled</strong></div>
           <div className="deployment-row"><span>Tenant scope</span><strong>All mailboxes</strong></div>
-          <div className="deployment-row"><span>Server-side fallback</span><strong>Planned</strong></div>
-          <div className="deployment-row"><span>Active template</span><strong>{template.name}</strong></div>
+          <div className="deployment-row"><span>Reply and forward coverage</span><strong>Handled by compose event</strong></div>
+          <div className="deployment-row"><span>Published template</span><strong>{publishedTemplateName}</strong></div>
+          <div className="deployment-row"><span>Previewing now</span><strong>{template.name}</strong></div>
         </div>
       </div>
     </section>

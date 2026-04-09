@@ -18,6 +18,7 @@ export async function saveAdminState(state: {
   branding: TenantBranding
   campaigns: SignatureCampaign[]
   activity: SignatureActivity[]
+  publishedTemplateId: string
   profiles: Array<{
     id: string
     email: string

@@ -85,6 +85,7 @@ function AuthedApp() {
   const [savingState, setSavingState] = useState(false)
   const [error, setError] = useState('')
   const [templateId, setTemplateId] = useState(signatureTemplates[0].id)
+  const [publishedTemplateId, setPublishedTemplateId] = useState(signatureTemplates[0].id)
   const [profileId, setProfileId] = useState('')
 
   useEffect(() => {
@@ -155,6 +156,7 @@ function AuthedApp() {
           return response.profiles.filter((profile) => directorySync.emails.has(profile.email.toLowerCase()))
         })
         setTemplateId((current) => response.templates.find((template) => template.id === current)?.id ?? response.templates[0]?.id ?? current)
+        setPublishedTemplateId(response.controls?.publishedTemplateId || response.templates[0]?.id || signatureTemplates[0].id)
         setHydrated(true)
       } catch (loadError) {
         if (cancelled) return
@@ -180,6 +182,7 @@ function AuthedApp() {
           branding: brandingState,
           campaigns,
           activity: activityFeed,
+          publishedTemplateId,
           profiles: profilesState.map((profile) => ({
             id: profile.id,
             email: profile.email,
@@ -196,7 +199,7 @@ function AuthedApp() {
     }, 450)
 
     return () => window.clearTimeout(timeout)
-  }, [brandingState, campaigns, activityFeed, profilesState, hydrated, loading, error])
+  }, [brandingState, campaigns, activityFeed, profilesState, publishedTemplateId, hydrated, loading, error])
 
   const profiles = useMemo(() => {
     if (!activeMicrosoftEmails || activeMicrosoftEmails.size === 0) return profilesState
@@ -320,6 +323,7 @@ function AuthedApp() {
       return
     }
     pushActivity(title, body)
+    setPublishedTemplateId(templateId)
     setPublishOpen(false)
     setNotificationOpen(true)
     setToast('Update published')
@@ -449,6 +453,7 @@ function AuthedApp() {
             {activeSection === 'Deployment' ? (
               <DeploymentView
                 profiles={profiles}
+                publishedTemplateName={templatesState.find((template) => template.id === publishedTemplateId)?.name || activeTemplate?.name || 'None'}
                 onActivateAll={handleActivateAllUsers}
                 onForceRefreshAll={handleForceTenantRefresh}
                 onCopyManifestUrl={handleCopyManifestUrl}
@@ -484,6 +489,7 @@ function AuthedApp() {
                 profile={activeProfile}
                 template={activeTemplate}
                 branding={brandingState}
+                publishedTemplateName={templatesState.find((template) => template.id === publishedTemplateId)?.name || activeTemplate?.name || 'None'}
                 onActivateAllUsers={handleActivateAllUsers}
                 onForceTenantRefresh={handleForceTenantRefresh}
                 onCopySignatureHtml={handleCopySignatureHtml}

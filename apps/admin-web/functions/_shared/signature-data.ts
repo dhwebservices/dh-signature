@@ -44,6 +44,7 @@ interface StoredAdminState {
   branding?: Partial<TenantBranding>
   campaigns?: SignatureCampaign[]
   activity?: SignatureActivity[]
+  publishedTemplateId?: string
   profiles?: Array<{
     id?: string
     email?: string
@@ -256,6 +257,7 @@ export async function buildOverview(env: Env): Promise<AdminOverviewResponse & {
       canActivateTenantWide: true,
       canForceRefresh: true,
       authProvider: 'Microsoft Entra ID',
+      publishedTemplateId: stored?.publishedTemplateId || signatureTemplates[0]?.id,
     },
   }
 }
@@ -292,6 +294,9 @@ export async function buildAssignmentByEmail(email: string, env: Env): Promise<S
   const overview = await buildOverview(env)
   const normalizedEmail = normalizeEmail(email)
   const profile = overview.profiles.find((item) => item.email === normalizedEmail)
+  const activeTemplate =
+    overview.templates.find((template) => template.id === overview.controls.publishedTemplateId) ||
+    overview.templates[0]
 
   if (!profile) {
     throw new Error(`No signature profile found for ${normalizedEmail}.`)
@@ -299,7 +304,7 @@ export async function buildAssignmentByEmail(email: string, env: Env): Promise<S
 
   return {
     profile,
-    template: overview.templates[0],
+    template: activeTemplate,
     branding: overview.branding,
   }
 }

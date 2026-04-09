@@ -158,11 +158,13 @@ export function CampaignsView({
 
 export function DeploymentView({
   profiles,
+  publishedTemplateName,
   onActivateAll,
   onForceRefreshAll,
   onCopyManifestUrl,
 }: {
   profiles: SignatureProfile[]
+  publishedTemplateName: string
   onActivateAll: () => void
   onForceRefreshAll: () => void
   onCopyManifestUrl: () => void | Promise<void>
@@ -187,8 +189,9 @@ export function DeploymentView({
       </div>
       <div className="deployment-list">
         <div className="deployment-row"><span>Outlook add-in</span><strong>Deployed</strong></div>
+        <div className="deployment-row"><span>Published template</span><strong>{publishedTemplateName}</strong></div>
         <div className="deployment-row"><span>Manifest</span><strong>Live on sig.dhwebsiteservices.co.uk</strong></div>
-        <div className="deployment-row"><span>Server-side fallback</span><strong>Next phase</strong></div>
+        <div className="deployment-row"><span>Reply and forward coverage</span><strong>Handled by compose event</strong></div>
       </div>
       <div className="action-row">
         <button className="primary-btn compact" onClick={onActivateAll}>
