@@ -11,6 +11,7 @@
   <SupportUrl DefaultValue="https://dhwebsiteservices.co.uk" />
   <AppDomains>
     <AppDomain>https://dhwebsiteservices.co.uk</AppDomain>
+    <AppDomain>https://sig.dhwebsiteservices.co.uk</AppDomain>
   </AppDomains>
   <Hosts>
     <Host Name="Mailbox" />
@@ -23,7 +24,7 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://localhost:3000/taskpane/index.html" />
+        <SourceLocation DefaultValue="https://sig.dhwebsiteservices.co.uk/taskpane/index.html" />
         <RequestedHeight>320</RequestedHeight>
       </DesktopSettings>
     </Form>
@@ -53,7 +54,7 @@
     </Hosts>
     <Resources>
       <bt:Urls>
-        <bt:Url id="Commands.Url" DefaultValue="https://localhost:3000/commands/commands.html" />
+        <bt:Url id="Commands.Url" DefaultValue="https://sig.dhwebsiteservices.co.uk/commands/commands.html" />
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GroupLabel" DefaultValue="DH Signature" />
@@ -62,5 +63,12 @@
         <bt:String id="PaneDescription" DefaultValue="DH-owned Outlook signature platform." />
       </bt:LongStrings>
     </Resources>
+    <WebApplicationInfo>
+      <Id>87f9f2d1-5841-406a-b365-d2215550347b</Id>
+      <Resource>api://sig.dhwebsiteservices.co.uk/87f9f2d1-5841-406a-b365-d2215550347b</Resource>
+      <Scopes>
+        <Scope>access_as_user</Scope>
+      </Scopes>
+    </WebApplicationInfo>
   </VersionOverrides>
 </OfficeApp>
