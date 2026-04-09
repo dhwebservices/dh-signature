@@ -59,4 +59,14 @@ export interface AdminUser {
   role: 'SignatureAdmin' | 'Viewer'
 }
 
+export interface AdminOverviewResponse {
+  profiles: SignatureProfile[]
+  templates: SignatureTemplate[]
+  controls: {
+    canActivateTenantWide: boolean
+    canForceRefresh: boolean
+    authProvider: string
+  }
+}
+
 export * from './mockData'

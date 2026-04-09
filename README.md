@@ -144,15 +144,24 @@ Recommended production env vars for the admin app:
 VITE_ENTRA_CLIENT_ID=your-production-entra-client-id
 VITE_ENTRA_TENANT_ID=your-tenant-id
 VITE_ENTRA_REDIRECT_URI=https://your-admin-domain
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+DH_BUSINESS_LANDLINE=02920 024218
+DH_WEBSITE_URL=https://dhwebsiteservices.co.uk
+DH_WORKPLACE_URL=https://workplace.dhwebsiteservices.co.uk
+DH_BOOKING_URL=https://dhwebsiteservices.co.uk/contact
+DH_INSTAGRAM_URL=https://instagram.com/dhwebsiteservices
+DH_FACEBOOK_URL=https://facebook.com/dhwebsiteservices
+DH_LINKEDIN_URL=https://linkedin.com/company/dhwebsiteservices
+DH_WHATSAPP_URL=https://wa.me/442920024218
 ```
 
 Important:
 
 - the **admin UI** is Pages
-- the **API** is still a normal backend scaffold today, not Cloudflare-ready yet
+- the **live admin API** now runs through Cloudflare Pages Functions inside `apps/admin-web/functions`
+- the separate `apps/api` scaffold still exists for later expansion, but the deployed admin app no longer needs a separate backend just to load staff data
 - the **Outlook add-in** assets can be hosted from the same admin domain later, but the compose/event logic still needs more build work
-
-If we want the API on Cloudflare too, the next step is to convert `apps/api` into a Worker or Pages Functions service.
 
 ## Important Notes
 
