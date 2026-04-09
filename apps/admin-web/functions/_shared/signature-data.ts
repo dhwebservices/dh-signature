@@ -60,11 +60,16 @@ const pickBestProfileRow = (rows: HrProfileRow[]) =>
     })[0] || null
 
 function buildBranding(env: Env): TenantBranding {
+  const configuredLogoUrl = env.DH_LOGO_URL || tenantBranding.logoUrl
+  const normalizedLogoUrl = configuredLogoUrl.endsWith('/icons/dh-logo.png')
+    ? configuredLogoUrl.replace('/icons/dh-logo.png', '/icons/dh-logo-icon.png')
+    : configuredLogoUrl
+
   return {
     ...tenantBranding,
     companyWebsiteLabel: env.DH_WEBSITE_URL ? new URL(env.DH_WEBSITE_URL).host.replace(/^www\./, '') : tenantBranding.companyWebsiteLabel,
     privacyPolicyUrl: env.DH_PRIVACY_POLICY_URL || tenantBranding.privacyPolicyUrl,
-    logoUrl: env.DH_LOGO_URL || tenantBranding.logoUrl,
+    logoUrl: normalizedLogoUrl,
   }
 }
 

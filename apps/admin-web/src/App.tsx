@@ -9,7 +9,7 @@ import { ControlPanel } from './components/ControlPanel'
 import { signatureTemplates, tenantBranding, type AdminOverviewResponse, type TenantBranding } from '@dh-signature/shared-types'
 import { LoginScreen } from './components/LoginScreen'
 import { UserRoster } from './components/UserRoster'
-import { msalConfig } from './authConfig'
+import { loginRequest, msalConfig } from './authConfig'
 import { AuditView, AssignmentsView, BrandKitView, CampaignsView, DeploymentView } from './components/SectionViews'
 import { fetchOverview } from './lib/api'
 
@@ -34,6 +34,7 @@ function AuthedApp() {
   const [searchValue, setSearchValue] = useState('')
   const [overview, setOverview] = useState<(AdminOverviewResponse & { branding?: TenantBranding }) | null>(null)
   const [activeMicrosoftEmails, setActiveMicrosoftEmails] = useState<Set<string> | null>(null)
+  const [directorySyncError, setDirectorySyncError] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [templateId, setTemplateId] = useState(signatureTemplates[0].id)
@@ -44,30 +45,35 @@ function AuthedApp() {
 
     async function loadMicrosoftDirectoryEmails() {
       const account = accounts[0]
-      if (!account) return null
+      if (!account) return { emails: null, error: 'No signed-in Entra account was available for directory sync.' }
 
       try {
         const token = await instance
-          .acquireTokenSilent({ scopes: ['https://graph.microsoft.com/User.Read.All'], account })
-          .catch(() => instance.acquireTokenPopup({ scopes: ['https://graph.microsoft.com/User.Read.All'], account }))
+          .acquireTokenSilent({ scopes: loginRequest.scopes, account })
+          .catch(() => instance.acquireTokenPopup({ scopes: loginRequest.scopes, account }))
 
-        const response = await fetch('https://graph.microsoft.com/v1.0/users?$select=userPrincipalName,accountEnabled&$top=999', {
+        const response = await fetch('https://graph.microsoft.com/v1.0/users?$select=userPrincipalName,mail,accountEnabled&$top=999', {
           headers: { Authorization: `Bearer ${token.accessToken}` },
         })
 
-        if (!response.ok) return null
+        if (!response.ok) {
+          return { emails: null, error: 'Microsoft directory sync is unavailable right now, so stale deleted users may still appear until Graph access is granted.' }
+        }
         const data = await response.json()
         const emails = new Set<string>()
 
         for (const row of data.value || []) {
-          const email = String(row.userPrincipalName || '').trim().toLowerCase()
-          if (!email || row.accountEnabled === false) continue
-          emails.add(email)
+          const candidates = [row.userPrincipalName, row.mail]
+            .map((value: string | undefined) => String(value || '').trim().toLowerCase())
+            .filter(Boolean)
+
+          if (row.accountEnabled === false) continue
+          for (const email of candidates) emails.add(email)
         }
 
-        return emails
+        return { emails, error: '' }
       } catch {
-        return null
+        return { emails: null, error: 'Microsoft directory sync could not complete. Sign out and back in if deleted users are still showing.' }
       }
     }
 
@@ -75,10 +81,11 @@ function AuthedApp() {
       try {
         setLoading(true)
         setError('')
-        const [response, microsoftEmails] = await Promise.all([fetchOverview(), loadMicrosoftDirectoryEmails()])
+        const [response, directorySync] = await Promise.all([fetchOverview(), loadMicrosoftDirectoryEmails()])
         if (cancelled) return
         setOverview(response)
-        setActiveMicrosoftEmails(microsoftEmails)
+        setActiveMicrosoftEmails(directorySync.emails)
+        setDirectorySyncError(directorySync.error)
         setTemplateId((current) => response.templates.find((template) => template.id === current)?.id ?? response.templates[0]?.id ?? current)
         setProfileId((current) => response.profiles.find((profile) => profile.id === current)?.id ?? response.profiles[0]?.id ?? '')
       } catch (loadError) {
@@ -201,6 +208,13 @@ function AuthedApp() {
                 <p>No staff profiles were returned from the live data source yet.</p>
               </section>
             )}
+
+            {directorySyncError ? (
+              <section className="panel status-panel">
+                <div className="panel-title">Microsoft directory sync needs attention</div>
+                <p>{directorySyncError}</p>
+              </section>
+            ) : null}
 
             {activeSection === 'Templates' ? (
               <TemplateLibrary templates={templates} activeTemplateId={templateId} onSelect={setTemplateId} />

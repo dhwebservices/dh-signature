@@ -7,7 +7,7 @@ export const tenantBranding: TenantBranding = {
   bookingLabel: 'Book a call',
   privacyPolicyLabel: 'Privacy Policy',
   privacyPolicyUrl: 'https://dhwebsiteservices.co.uk/privacy-policy',
-  logoUrl: 'https://sig.dhwebsiteservices.co.uk/icons/dh-logo.png',
+  logoUrl: 'https://sig.dhwebsiteservices.co.uk/icons/dh-logo-icon.png',
   logoMark: 'DH',
 }
 
