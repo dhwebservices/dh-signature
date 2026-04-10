@@ -5,7 +5,7 @@
   xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides"
   xsi:type="MailApp">
   <Id>9c5603c8-2fd8-4c80-9f87-25f7efb0db35</Id>
-  <Version>0.1.4.0</Version>
+  <Version>0.1.5.0</Version>
   <ProviderName>DH Website Services</ProviderName>
   <DefaultLocale>en-GB</DefaultLocale>
   <DisplayName DefaultValue="DH Signature" />
@@ -50,9 +50,7 @@
       <Hosts>
         <Host xsi:type="MailHost">
           <Runtimes>
-            <Runtime resid="WebViewRuntime.Url">
-              <Override type="javascript" resid="JSRuntime.Url" />
-            </Runtime>
+            <Runtime resid="WebViewRuntime.Url" />
           </Runtimes>
           <DesktopFormFactor>
             <FunctionFile resid="Commands.Url" />
@@ -130,7 +128,6 @@
           <bt:Url id="Commands.Url" DefaultValue="https://sig.dhwebsiteservices.co.uk/commands/commands.html" />
           <bt:Url id="Taskpane.Url" DefaultValue="https://sig.dhwebsiteservices.co.uk/taskpane/index.html" />
           <bt:Url id="WebViewRuntime.Url" DefaultValue="https://sig.dhwebsiteservices.co.uk/commands/commands.html" />
-          <bt:Url id="JSRuntime.Url" DefaultValue="https://sig.dhwebsiteservices.co.uk/commands/commands.js" />
         </bt:Urls>
         <bt:ShortStrings>
           <bt:String id="GroupLabel" DefaultValue="DH Signature" />
