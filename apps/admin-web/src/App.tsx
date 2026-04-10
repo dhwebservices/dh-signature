@@ -2,7 +2,7 @@ import { AuthenticatedTemplate, MsalProvider, UnauthenticatedTemplate, useMsal }
 import { PublicClientApplication } from '@azure/msal-browser'
 import { useEffect, useMemo, useState } from 'react'
 import { renderSignature } from '@dh-signature/signature-renderer'
-import type { SignatureActivity, SignatureAssignments, SignatureCampaign, SignatureProfile, SignatureTemplate, TenantBranding } from '@dh-signature/shared-types'
+import type { SignatureActivity, SignatureAssignments, SignatureBanner, SignatureCampaign, SignatureProfile, SignatureTemplate, TenantBranding } from '@dh-signature/shared-types'
 import { signatureTemplates, tenantBranding } from '@dh-signature/shared-types'
 import { Sidebar, type AdminSection } from './components/Sidebar'
 import { Topbar } from './components/Topbar'
@@ -27,8 +27,12 @@ const initialCampaigns: CampaignItem[] = [
     headline: 'Need help with your website or digital growth?',
     body: 'Book a call with DH Website Services and speak to the right team.',
     ctaLabel: 'Book a call',
+    ctaMode: 'booking',
     audience: 'All staff mailboxes',
     status: 'Live',
+    startAt: null,
+    endAt: null,
+    suppressedTemplateIds: [],
   },
   {
     id: 'client-ops-cta',
@@ -36,10 +40,47 @@ const initialCampaigns: CampaignItem[] = [
     headline: 'Need support with your live website or client workspace?',
     body: 'Speak to DH Website Services and get routed to the right support team.',
     ctaLabel: 'DH Workplace',
+    ctaMode: 'workplace',
     audience: 'Client Operations',
     status: 'Draft',
+    startAt: null,
+    endAt: null,
+    suppressedTemplateIds: [],
   },
 ]
+
+function resolveCampaignBanner(
+  profile: SignatureProfile | null,
+  template: SignatureTemplate | undefined,
+  campaigns: SignatureCampaign[],
+): SignatureBanner | null {
+  if (!profile || !template) return null
+
+  const normalizedDepartment = (profile.department || '').trim().toLowerCase()
+  const now = Date.now()
+  const activeCampaign = campaigns.find((campaign) => {
+    if (campaign.status !== 'Live') return false
+    if ((campaign.suppressedTemplateIds || []).includes(template.id)) return false
+    if (campaign.startAt && new Date(campaign.startAt).getTime() > now) return false
+    if (campaign.endAt && new Date(campaign.endAt).getTime() < now) return false
+    const audience = campaign.audience.trim().toLowerCase()
+    return audience === 'all staff mailboxes' || audience === normalizedDepartment || audience.includes(normalizedDepartment)
+  })
+
+  if (!activeCampaign) return null
+
+  return {
+    headline: activeCampaign.headline,
+    body: activeCampaign.body,
+    ctaLabel: activeCampaign.ctaLabel,
+    ctaHref:
+      activeCampaign.ctaMode === 'custom'
+        ? activeCampaign.ctaHref || profile.bookingUrl
+        : activeCampaign.ctaMode === 'workplace'
+          ? profile.workplaceUrl
+          : profile.bookingUrl,
+  }
+}
 
 function nowIso() {
   return new Date().toISOString()
@@ -244,6 +285,10 @@ function AuthedApp() {
     () => filteredProfiles.find((profile) => profile.id === profileId) ?? filteredProfiles[0] ?? profiles[0] ?? null,
     [filteredProfiles, profileId, profiles],
   )
+  const activeBanner = useMemo(
+    () => resolveCampaignBanner(activeProfile, activeTemplate, campaigns),
+    [activeProfile, activeTemplate, campaigns],
+  )
   const currentAdminName = accounts[0]?.name || accounts[0]?.username?.split('@')[0] || 'Admin'
   const mailboxCount = profiles.length
   const unreadNotifications = activityFeed.length
@@ -373,20 +418,16 @@ function AuthedApp() {
     setToast('Update published')
   }
 
-  function handleAddCampaign(name: string, headline: string, body: string, ctaLabel: string, audience: string) {
+  function handleAddCampaign(campaign: Omit<SignatureCampaign, 'id' | 'status'>) {
     setCampaigns((current) => [
       {
-        id: `${name}-${Date.now()}`,
-        name,
-        headline,
-        body,
-        ctaLabel,
-        audience,
+        id: `${campaign.name}-${Date.now()}`,
+        ...campaign,
         status: 'Draft',
       },
       ...current,
     ])
-    pushActivity('Campaign drafted', `${name} was added as a new signature campaign for ${audience}.`)
+    pushActivity('Campaign drafted', `${campaign.name} was added as a new signature campaign for ${campaign.audience}.`)
     setToast('Campaign created')
   }
 
@@ -403,6 +444,12 @@ function AuthedApp() {
     setToast('Campaign updated')
   }
 
+  function handleUpdateCampaign(campaignId: string, patch: Partial<SignatureCampaign>) {
+    setCampaigns((current) =>
+      current.map((campaign) => (campaign.id === campaignId ? { ...campaign, ...patch } : campaign)),
+    )
+  }
+
   async function handleCopyManifestUrl() {
     await navigator.clipboard.writeText(`${window.location.origin}/manifest.xml`)
     pushActivity('Manifest copied', 'The Outlook add-in manifest URL was copied from the deployment view.')
@@ -411,7 +458,7 @@ function AuthedApp() {
 
   async function handleCopySignatureHtml() {
     if (!activeProfile || !activeTemplate) return
-    const rendered = renderSignature({ profile: activeProfile, template: activeTemplate, branding: brandingState })
+    const rendered = renderSignature({ profile: activeProfile, template: activeTemplate, branding: brandingState, banner: activeBanner })
     await navigator.clipboard.writeText(rendered.html)
     pushActivity('Signature HTML copied', `Copied the ${activeTemplate.name} signature markup for ${activeProfile.fullName}.`)
     setToast('Signature HTML copied')
@@ -463,6 +510,7 @@ function AuthedApp() {
                 profile={activeProfile}
                 template={activeTemplate}
                 branding={brandingState}
+                banner={activeBanner}
                 mode={previewMode}
                 onModeChange={setPreviewMode}
               />
@@ -498,7 +546,13 @@ function AuthedApp() {
               <BrandKitView branding={brandingState} onSave={handleSaveBranding} />
             ) : null}
             {activeSection === 'Campaigns' ? (
-              <CampaignsView campaigns={campaigns} onCreate={handleAddCampaign} onToggle={handleToggleCampaign} />
+              <CampaignsView
+                campaigns={campaigns}
+                templates={templatesState}
+                onCreate={handleAddCampaign}
+                onToggle={handleToggleCampaign}
+                onUpdate={handleUpdateCampaign}
+              />
             ) : null}
             {activeSection === 'Deployment' ? (
               <DeploymentView

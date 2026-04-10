@@ -69,8 +69,13 @@ export interface SignatureCampaign {
   headline: string
   body: string
   ctaLabel: string
+  ctaMode?: 'booking' | 'workplace' | 'custom'
+  ctaHref?: string
   audience: string
   status: 'Draft' | 'Live' | 'Paused'
+  startAt?: string | null
+  endAt?: string | null
+  suppressedTemplateIds?: string[]
 }
 
 export interface SignatureBanner {

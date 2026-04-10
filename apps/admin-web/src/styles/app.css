@@ -21,7 +21,7 @@
 * { box-sizing: border-box; }
 html, body, #root { min-height: 100%; margin: 0; }
 body { min-height: 100vh; }
-button, input { font: inherit; }
+button, input, select, textarea { font: inherit; }
 
 .login-shell {
   min-height: 100vh;
@@ -508,7 +508,8 @@ button, input { font: inherit; }
 }
 
 .input-card input,
-.input-card textarea {
+.input-card textarea,
+.input-card select {
   width: 100%;
   border: 1px solid rgba(20, 31, 61, 0.1);
   border-radius: 10px;
@@ -717,20 +718,33 @@ button, input { font: inherit; }
   margin-bottom: 16px;
 }
 
+.input-card-wide {
+  grid-column: 1 / -1;
+}
+
+.input-card-compact {
+  min-width: 220px;
+}
+
 .campaign-list {
   display: grid;
   gap: 10px;
 }
 
 .campaign-row {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
   gap: 16px;
-  align-items: center;
   padding: 14px;
   border-radius: 14px;
   background: rgba(248, 250, 255, 0.92);
   border: 1px solid rgba(20, 31, 61, 0.05);
+}
+
+.campaign-inline-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-items: start;
 }
 
 .campaign-actions {
@@ -738,6 +752,29 @@ button, input { font: inherit; }
   gap: 10px;
   align-items: center;
   flex-wrap: wrap;
+}
+
+.checkbox-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.checkbox-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(20, 31, 61, 0.08);
+  background: white;
+  font-size: 12px;
+  color: #243047;
+}
+
+.checkbox-chip input {
+  width: 14px;
+  height: 14px;
 }
 
 .status-chip {
@@ -887,7 +924,10 @@ button, input { font: inherit; }
   }
 
   .campaign-row {
-    flex-direction: column;
-    align-items: flex-start;
+    width: 100%;
+  }
+
+  .campaign-inline-grid {
+    grid-template-columns: 1fr;
   }
 }

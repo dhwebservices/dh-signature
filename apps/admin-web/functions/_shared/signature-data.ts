@@ -76,8 +76,12 @@ const defaultCampaigns: SignatureCampaign[] = [
     headline: 'Need help with your website or digital growth?',
     body: 'Book a call with DH Website Services and speak to the right team.',
     ctaLabel: 'Book a call',
+    ctaMode: 'booking',
     audience: 'All staff mailboxes',
     status: 'Live',
+    startAt: null,
+    endAt: null,
+    suppressedTemplateIds: [],
   },
   {
     id: 'client-ops-cta',
@@ -85,8 +89,12 @@ const defaultCampaigns: SignatureCampaign[] = [
     headline: 'Need support with your live website or client workspace?',
     body: 'Speak to DH Website Services and get routed to the right support team.',
     ctaLabel: 'DH Workplace',
+    ctaMode: 'workplace',
     audience: 'Client Operations',
     status: 'Draft',
+    startAt: null,
+    endAt: null,
+    suppressedTemplateIds: [],
   },
 ]
 
@@ -323,9 +331,13 @@ export async function buildAssignmentByEmail(email: string, env: Env): Promise<S
     overview.templates.find((template) => template.id === assignedTemplateId) ||
     overview.templates[0]
   const normalizedDepartment = (profile?.department || '').trim().toLowerCase()
+  const now = Date.now()
   const activeCampaign =
     overview.campaigns.find((campaign) => {
       if (campaign.status !== 'Live') return false
+      if ((campaign.suppressedTemplateIds || []).includes(activeTemplate.id)) return false
+      if (campaign.startAt && new Date(campaign.startAt).getTime() > now) return false
+      if (campaign.endAt && new Date(campaign.endAt).getTime() < now) return false
       const audience = campaign.audience.trim().toLowerCase()
       return audience === 'all staff mailboxes' || audience === normalizedDepartment || audience.includes(normalizedDepartment)
     }) || null
@@ -343,7 +355,12 @@ export async function buildAssignmentByEmail(email: string, env: Env): Promise<S
           headline: activeCampaign.headline,
           body: activeCampaign.body,
           ctaLabel: activeCampaign.ctaLabel,
-          ctaHref: activeCampaign.ctaLabel.toLowerCase().includes('workplace') ? profile.workplaceUrl : profile.bookingUrl,
+          ctaHref:
+            activeCampaign.ctaMode === 'custom'
+              ? activeCampaign.ctaHref || profile.bookingUrl
+              : activeCampaign.ctaMode === 'workplace'
+                ? profile.workplaceUrl
+                : profile.bookingUrl,
         }
       : null,
   }

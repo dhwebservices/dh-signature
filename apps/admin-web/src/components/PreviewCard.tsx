@@ -1,5 +1,5 @@
 import { renderSignature } from '@dh-signature/signature-renderer'
-import type { SignatureProfile, SignatureTemplate, TenantBranding } from '@dh-signature/shared-types'
+import type { SignatureBanner, SignatureProfile, SignatureTemplate, TenantBranding } from '@dh-signature/shared-types'
 
 export type PreviewMode = 'desktop' | 'mobile' | 'reply'
 
@@ -7,16 +7,18 @@ export function PreviewCard({
   profile,
   template,
   branding,
+  banner,
   mode,
   onModeChange,
 }: {
   profile: SignatureProfile
   template: SignatureTemplate
   branding: TenantBranding
+  banner?: SignatureBanner | null
   mode: PreviewMode
   onModeChange: (mode: PreviewMode) => void
 }) {
-  const rendered = renderSignature({ profile, template, branding })
+  const rendered = renderSignature({ profile, template, branding, banner })
   const intro = mode === 'reply'
     ? 'Here’s the latest update below. Keeping the reply context intact while the DH signature stays clean.'
     : 'Here’s how the new DH tenant-wide signature will appear in Outlook while staff are composing emails.'

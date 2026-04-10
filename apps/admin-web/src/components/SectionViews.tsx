@@ -150,18 +150,36 @@ export function BrandKitView({
 
 export function CampaignsView({
   campaigns,
+  templates,
   onCreate,
   onToggle,
+  onUpdate,
 }: {
   campaigns: CampaignItem[]
-  onCreate: (name: string, headline: string, body: string, ctaLabel: string, audience: string) => void
+  templates: SignatureTemplate[]
+  onCreate: (campaign: Omit<SignatureCampaign, 'id' | 'status'>) => void
   onToggle: (campaignId: string) => void
+  onUpdate: (campaignId: string, patch: Partial<SignatureCampaign>) => void
 }) {
   const [name, setName] = useState('')
   const [headline, setHeadline] = useState('Need help with your website or digital growth?')
   const [body, setBody] = useState('Book a call with DH Website Services and speak to the right team.')
   const [ctaLabel, setCtaLabel] = useState('Book a call')
+  const [ctaMode, setCtaMode] = useState<NonNullable<SignatureCampaign['ctaMode']>>('booking')
+  const [ctaHref, setCtaHref] = useState('')
   const [audience, setAudience] = useState('All staff mailboxes')
+  const [startAt, setStartAt] = useState('')
+  const [endAt, setEndAt] = useState('')
+  const [suppressedTemplateIds, setSuppressedTemplateIds] = useState<string[]>([])
+
+  function toggleSuppressedTemplate(templateId: string, currentValues: string[], commit?: (values: string[]) => void) {
+    const nextValues = currentValues.includes(templateId)
+      ? currentValues.filter((value) => value !== templateId)
+      : [...currentValues, templateId]
+
+    commit?.(nextValues)
+    return nextValues
+  }
 
   return (
     <section className="panel">
@@ -176,13 +194,56 @@ export function CampaignsView({
         <InputField label="Banner headline" value={headline} onChange={setHeadline} />
         <InputField label="Banner body" value={body} onChange={setBody} />
         <InputField label="CTA label" value={ctaLabel} onChange={setCtaLabel} />
+        <label className="input-card">
+          <span className="field-label">CTA destination</span>
+          <select value={ctaMode} onChange={(event) => setCtaMode(event.target.value as NonNullable<SignatureCampaign['ctaMode']>)}>
+            <option value="booking">Book a call</option>
+            <option value="workplace">DH Workplace</option>
+            <option value="custom">Custom URL</option>
+          </select>
+        </label>
+        {ctaMode === 'custom' ? (
+          <InputField label="Custom CTA URL" value={ctaHref} onChange={setCtaHref} placeholder="https://dhwebsiteservices.co.uk/contact" />
+        ) : null}
         <InputField label="Audience" value={audience} onChange={setAudience} />
+        <InputField label="Start at" type="datetime-local" value={startAt} onChange={setStartAt} />
+        <InputField label="End at" type="datetime-local" value={endAt} onChange={setEndAt} />
+        <div className="input-card input-card-wide">
+          <span className="field-label">Hide banner on templates</span>
+          <div className="checkbox-grid">
+            {templates.map((template) => (
+              <label key={template.id} className="checkbox-chip">
+                <input
+                  type="checkbox"
+                  checked={suppressedTemplateIds.includes(template.id)}
+                  onChange={() => setSuppressedTemplateIds((current) => toggleSuppressedTemplate(template.id, current))}
+                />
+                <span>{template.name}</span>
+              </label>
+            ))}
+          </div>
+        </div>
         <button
           className="primary-btn compact"
           onClick={() => {
             if (!name.trim()) return
-            onCreate(name.trim(), headline.trim(), body.trim(), ctaLabel.trim(), audience.trim())
+            onCreate({
+              name: name.trim(),
+              headline: headline.trim(),
+              body: body.trim(),
+              ctaLabel: ctaLabel.trim(),
+              ctaMode,
+              ctaHref: ctaMode === 'custom' ? ctaHref.trim() : '',
+              audience: audience.trim(),
+              startAt: startAt.trim() || null,
+              endAt: endAt.trim() || null,
+              suppressedTemplateIds,
+            })
             setName('')
+            setCtaHref('')
+            setStartAt('')
+            setEndAt('')
+            setSuppressedTemplateIds([])
           }}
         >
           Add campaign
@@ -195,6 +256,18 @@ export function CampaignsView({
               <div className="table-main">{campaign.name}</div>
               <div className="table-sub">{campaign.audience} · CTA: {campaign.ctaLabel}</div>
               <div className="table-sub" style={{ marginTop: 6 }}>{campaign.headline}</div>
+              <div className="table-sub" style={{ marginTop: 6 }}>
+                {campaign.startAt ? `Starts ${new Date(campaign.startAt).toLocaleString('en-GB')}` : 'Starts immediately'}
+                {' · '}
+                {campaign.endAt ? `Ends ${new Date(campaign.endAt).toLocaleString('en-GB')}` : 'No end date'}
+              </div>
+              {campaign.suppressedTemplateIds?.length ? (
+                <div className="table-sub" style={{ marginTop: 6 }}>
+                  Hidden on {campaign.suppressedTemplateIds
+                    .map((templateId) => templates.find((template) => template.id === templateId)?.name || templateId)
+                    .join(', ')}
+                </div>
+              ) : null}
             </div>
             <div className="campaign-actions">
               <span className={`status-chip status-${campaign.status.toLowerCase()}`}>{campaign.status}</span>
@@ -202,6 +275,62 @@ export function CampaignsView({
                 {campaign.status === 'Live' ? <PauseCircle size={14} /> : <PlayCircle size={14} />}
                 {campaign.status === 'Live' ? 'Pause' : campaign.status === 'Paused' ? 'Draft' : 'Go live'}
               </button>
+            </div>
+            <div className="campaign-inline-grid">
+              <label className="assignment-select inline">
+                <span className="field-label">CTA target</span>
+                <select
+                  value={campaign.ctaMode || 'booking'}
+                  onChange={(event) => onUpdate(campaign.id, { ctaMode: event.target.value as NonNullable<SignatureCampaign['ctaMode']> })}
+                >
+                  <option value="booking">Book a call</option>
+                  <option value="workplace">DH Workplace</option>
+                  <option value="custom">Custom URL</option>
+                </select>
+              </label>
+              {(campaign.ctaMode || 'booking') === 'custom' ? (
+                <label className="input-card input-card-compact">
+                  <span className="field-label">Custom URL</span>
+                  <input
+                    value={campaign.ctaHref || ''}
+                    onChange={(event) => onUpdate(campaign.id, { ctaHref: event.target.value })}
+                    placeholder="https://..."
+                  />
+                </label>
+              ) : null}
+              <label className="input-card input-card-compact">
+                <span className="field-label">Start</span>
+                  <input
+                    type="datetime-local"
+                    value={campaign.startAt || ''}
+                    onChange={(event) => onUpdate(campaign.id, { startAt: event.target.value || null })}
+                  />
+                </label>
+              <label className="input-card input-card-compact">
+                <span className="field-label">End</span>
+                <input
+                  type="datetime-local"
+                  value={campaign.endAt || ''}
+                  onChange={(event) => onUpdate(campaign.id, { endAt: event.target.value || null })}
+                />
+              </label>
+              <div className="input-card input-card-wide">
+                <span className="field-label">Hide on templates</span>
+                <div className="checkbox-grid">
+                  {templates.map((template) => (
+                    <label key={template.id} className="checkbox-chip">
+                      <input
+                        type="checkbox"
+                        checked={(campaign.suppressedTemplateIds || []).includes(template.id)}
+                        onChange={() => onUpdate(campaign.id, {
+                          suppressedTemplateIds: toggleSuppressedTemplate(template.id, campaign.suppressedTemplateIds || []),
+                        })}
+                      />
+                      <span>{template.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         ))}
@@ -319,16 +448,18 @@ function InputField({
   value,
   onChange,
   placeholder,
+  type,
 }: {
   label: string
   value: string
   onChange: (value: string) => void
   placeholder?: string
+  type?: string
 }) {
   return (
     <label className="input-card">
       <span className="field-label">{label}</span>
-      <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} />
+      <input type={type} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} />
     </label>
   )
 }
