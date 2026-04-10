@@ -46,7 +46,10 @@
     })
 
     if (!response.ok) {
-      throw new Error('Could not load rendered signature.')
+      const payload = await response.json().catch(function () {
+        return {}
+      })
+      throw new Error(payload?.error || 'Could not load rendered signature.')
     }
 
     return response.json()
@@ -86,14 +89,27 @@
     })
   }
 
+  function removeExistingSignature(html) {
+    if (!html || html.indexOf(SIGNATURE_MARKER) === -1) return html || ''
+
+    const markerComment = new RegExp(`<!--\\s*${SIGNATURE_MARKER}\\s*-->[\\s\\S]*$`, 'i')
+    if (markerComment.test(html)) {
+      return html.replace(markerComment, '').trim()
+    }
+
+    const markerText = new RegExp(`\\[${SIGNATURE_MARKER}\\][\\s\\S]*$`, 'i')
+    return html.replace(markerText, '').trim()
+  }
+
   async function onNewMessageComposeHandler(event) {
     try {
       const item = Office.context?.mailbox?.item
       const existingBody = await getCurrentBodyHtml(item)
       if (existingBody && existingBody.includes(SIGNATURE_MARKER)) {
-        event.completed()
+        applySignature(removeExistingSignature(existingBody), event)
         return
       }
+
       const email = resolveSenderEmail(item)
       if (!email) {
         applySignature(FALLBACK_SIGNATURE, event)

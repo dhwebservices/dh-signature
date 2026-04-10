@@ -28,7 +28,7 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://sig.dhwebsiteservices.co.uk/taskpane/" />
+        <SourceLocation DefaultValue="https://sig.dhwebsiteservices.co.uk/taskpane/index.html" />
         <RequestedHeight>320</RequestedHeight>
       </DesktopSettings>
     </Form>
@@ -93,8 +93,8 @@
           <bt:Image id="Icon80" DefaultValue="https://sig.dhwebsiteservices.co.uk/icons/dh-logo.png" />
         </bt:Images>
         <bt:Urls>
-          <bt:Url id="Taskpane.Url" DefaultValue="https://sig.dhwebsiteservices.co.uk/taskpane/" />
-          <bt:Url id="Autorun.Url" DefaultValue="https://sig.dhwebsiteservices.co.uk/commands/commands" />
+          <bt:Url id="Taskpane.Url" DefaultValue="https://sig.dhwebsiteservices.co.uk/taskpane/index.html" />
+          <bt:Url id="Autorun.Url" DefaultValue="https://sig.dhwebsiteservices.co.uk/commands/commands.html" />
           <bt:Url id="Autorun.Script" DefaultValue="https://sig.dhwebsiteservices.co.uk/commands/commands.js" />
         </bt:Urls>
         <bt:ShortStrings>

@@ -72,11 +72,14 @@
     <div class="shell">
       <div class="eyebrow">DH Signature</div>
       <h1>Outlook compose add-in</h1>
-      <p>Preview the exact signature HTML currently generated for the signed-in sender.</p>
-      <button id="loadSignature" class="button" type="button">Load my signature</button>
+      <p>Preview the live signature for the current sender, then apply it straight into the draft.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button id="previewSignature" class="button" type="button">Preview my signature</button>
+        <button id="applySignature" class="button" type="button" style="background:linear-gradient(135deg, #12377a, #1d7d63);">Apply to draft</button>
+      </div>
       <div id="meta" class="meta"></div>
       <div id="preview" class="preview"></div>
     </div>
-    <script src="/taskpane/index.js"></script>
+    <script src="./index.js"></script>
   </body>
 </html>

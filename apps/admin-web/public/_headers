@@ -6,9 +6,9 @@
   Cache-Control: public, max-age=31536000, immutable
 
 /commands/*
-  Content-Security-Policy: frame-ancestors https://outlook.office.com https://outlook.office365.com https://*.office.com https://*.officeapps.live.com https://*.microsoft.com;
+  Content-Security-Policy: frame-ancestors https://outlook.office.com https://outlook.office365.com https://outlook.cloud.microsoft https://*.office.com https://*.officeapps.live.com https://*.microsoft.com https://*.cloud.microsoft;
   X-Content-Type-Options: nosniff
 
 /taskpane/*
-  Content-Security-Policy: frame-ancestors https://outlook.office.com https://outlook.office365.com https://*.office.com https://*.officeapps.live.com https://*.microsoft.com;
+  Content-Security-Policy: frame-ancestors https://outlook.office.com https://outlook.office365.com https://outlook.cloud.microsoft https://*.office.com https://*.officeapps.live.com https://*.microsoft.com https://*.cloud.microsoft;
   X-Content-Type-Options: nosniff
