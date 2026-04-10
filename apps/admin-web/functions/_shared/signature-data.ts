@@ -69,6 +69,18 @@ const firstNonEmpty = (...values: Array<string | null | undefined>) => {
   return ''
 }
 
+function titleCaseFromEmail(email: string) {
+  return email
+    .split('@')[0]
+    .replace(/[._-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+}
+
 const defaultCampaigns: SignatureCampaign[] = [
   {
     id: 'launch-consistency',
@@ -186,6 +198,29 @@ function getGlobalLinks(env: Env) {
         href: env.DH_WHATSAPP_URL || 'https://wa.me/442920024218',
       },
     ],
+  }
+}
+
+function buildFallbackProfile(email: string, env: Env, stored?: StoredAdminState | null): SignatureProfile {
+  const normalizedEmail = normalizeEmail(email)
+  const globalLinks = getGlobalLinks(env)
+  const saved = (stored?.profiles || []).find((profile) => normalizeEmail(profile.email || '') === normalizedEmail)
+
+  return {
+    id: `profile-${normalizedEmail}`,
+    email: normalizedEmail,
+    fullName: titleCaseFromEmail(normalizedEmail) || normalizedEmail,
+    title: 'Staff member',
+    department: 'General',
+    workPhone: globalLinks.businessLandline,
+    businessLandline: globalLinks.businessLandline,
+    websiteUrl: globalLinks.websiteUrl,
+    workplaceUrl: globalLinks.workplaceUrl,
+    bookingUrl: globalLinks.bookingUrl,
+    socialLinks: globalLinks.socialLinks,
+    signatureEnabled: saved?.signatureEnabled ?? true,
+    forceRefreshRequired: saved?.forceRefreshRequired ?? true,
+    lastSyncedAt: saved?.lastSyncedAt || new Date().toISOString(),
   }
 }
 
@@ -322,7 +357,7 @@ export async function saveAdminState(env: Env, state: StoredAdminState) {
 export async function buildAssignmentByEmail(email: string, env: Env): Promise<SignatureAssignment> {
   const overview = await buildOverview(env)
   const normalizedEmail = normalizeEmail(email)
-  const profile = overview.profiles.find((item) => item.email === normalizedEmail)
+  const profile = overview.profiles.find((item) => item.email === normalizedEmail) || buildFallbackProfile(normalizedEmail, env)
   const assignedTemplateId =
     overview.assignments.profileTemplates[normalizedEmail] ||
     overview.assignments.departmentTemplates[profile?.department || ''] ||
@@ -341,10 +376,6 @@ export async function buildAssignmentByEmail(email: string, env: Env): Promise<S
       const audience = campaign.audience.trim().toLowerCase()
       return audience === 'all staff mailboxes' || audience === normalizedDepartment || audience.includes(normalizedDepartment)
     }) || null
-
-  if (!profile) {
-    throw new Error(`No signature profile found for ${normalizedEmail}.`)
-  }
 
   return {
     profile,
