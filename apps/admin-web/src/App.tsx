@@ -149,35 +149,41 @@ function AuthedApp() {
 
     async function loadMicrosoftDirectoryEmails() {
       const account = accounts[0]
-      if (!account) return { emails: null, error: 'No signed-in Entra account was available for directory sync.' }
+      if (!account) return { emails: null, error: '' }
 
       try {
-        const token = await instance
-          .acquireTokenSilent({ scopes: loginRequest.scopes, account })
-          .catch(() => instance.acquireTokenPopup({ scopes: loginRequest.scopes, account }))
+        const token = await instance.acquireTokenSilent({ scopes: loginRequest.scopes, account }).catch(() => null)
+        if (!token?.accessToken) return { emails: null, error: '' }
 
-        const response = await fetch('https://graph.microsoft.com/v1.0/users?$select=userPrincipalName,mail,accountEnabled&$top=999', {
-          headers: { Authorization: `Bearer ${token.accessToken}` },
-        })
-
-        if (!response.ok) {
-          return { emails: null, error: 'Microsoft directory sync is unavailable right now, so stale deleted users may still appear until Graph access is granted.' }
-        }
-        const data = await response.json()
         const emails = new Set<string>()
+        let nextUrl: string | null =
+          'https://graph.microsoft.com/v1.0/users?$select=userPrincipalName,mail,accountEnabled&$top=999'
 
-        for (const row of data.value || []) {
-          const candidates = [row.userPrincipalName, row.mail]
-            .map((value: string | undefined) => String(value || '').trim().toLowerCase())
-            .filter(Boolean)
+        while (nextUrl) {
+          const response = await fetch(nextUrl, {
+            headers: { Authorization: `Bearer ${token.accessToken}` },
+          })
 
-          if (row.accountEnabled === false) continue
-          for (const email of candidates) emails.add(email)
+          if (!response.ok) {
+            return { emails: null, error: '' }
+          }
+
+          const data = await response.json()
+          for (const row of data.value || []) {
+            const candidates = [row.userPrincipalName, row.mail]
+              .map((value: string | undefined) => String(value || '').trim().toLowerCase())
+              .filter(Boolean)
+
+            if (row.accountEnabled === false) continue
+            for (const email of candidates) emails.add(email)
+          }
+
+          nextUrl = typeof data['@odata.nextLink'] === 'string' ? data['@odata.nextLink'] : null
         }
 
         return { emails, error: '' }
       } catch {
-        return { emails: null, error: 'Microsoft directory sync could not complete. Sign out and back in if deleted users are still showing.' }
+        return { emails: null, error: '' }
       }
     }
 
