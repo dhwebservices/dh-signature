@@ -44,17 +44,53 @@ function socialBadge(link: SocialLink) {
   `
 }
 
+function safeUrl(value: string, fallback = '') {
+  if (!value) return fallback
+  try {
+    const url = new URL(value)
+    return url.toString()
+  } catch {
+    return fallback
+  }
+}
+
+function safeText(value: string, fallback = '') {
+  const trimmed = typeof value === 'string' ? value.trim() : ''
+  return trimmed || fallback
+}
+
 export function renderSignature({ profile, template, branding, banner }: SignatureAssignment): RenderedSignature {
+  const fullName = safeText(profile.fullName, profile.email)
+  const title = safeText(profile.title, 'Staff member')
+  const department = safeText(profile.department)
+  const businessLandline = safeText(profile.businessLandline, safeText(profile.workPhone))
+  const websiteUrl = safeUrl(profile.websiteUrl, 'https://dhwebsiteservices.co.uk')
+  const workplaceUrl = safeUrl(profile.workplaceUrl)
+  const bookingUrl = safeUrl(profile.bookingUrl)
+  const logoUrl = safeUrl(branding.logoUrl, 'https://sig.dhwebsiteservices.co.uk/icons/dh-logo-icon.png')
+  const companyName = safeText(branding.companyName, 'DH Website Services')
+  const companyWebsiteLabel = safeText(branding.companyWebsiteLabel, 'dhwebsiteservices.co.uk')
+  const workplaceLabel = safeText(branding.workplaceLabel, 'DH Workplace')
+  const bookingLabel = safeText(branding.bookingLabel, 'Book a call')
+  const privacyPolicyLabel = safeText(branding.privacyPolicyLabel, 'Privacy Policy')
+  const privacyPolicyUrl = safeUrl(branding.privacyPolicyUrl, 'https://dhwebsiteservices.co.uk/privacy-policy')
+  const validSocialLinks = profile.socialLinks.filter((link) => safeUrl(link.href))
   const departmentChip = template.showDepartmentChip
-    ? `<div style="display:inline-flex;padding:5px 10px;border-radius:999px;background:${template.accentColor}12;color:${template.accentColor};font-size:11px;font-weight:600;margin-top:8px;">${profile.department}</div>`
+    ? department
+      ? `<div style="display:inline-flex;padding:5px 10px;border-radius:999px;background:${template.accentColor}12;color:${template.accentColor};font-size:11px;font-weight:600;margin-top:8px;">${department}</div>`
+      : ''
     : ''
 
   const bookingCta = template.showBookingCta
-    ? `<a href="${profile.bookingUrl}" style="display:inline-flex;align-items:center;justify-content:center;height:38px;padding:0 16px;border-radius:999px;background:${template.accentColor};color:#ffffff;text-decoration:none;font-size:13px;font-weight:600;">${branding.bookingLabel}</a>`
+    ? bookingUrl
+      ? `<a href="${bookingUrl}" style="display:inline-flex;align-items:center;justify-content:center;height:38px;padding:0 16px;border-radius:999px;background:${template.accentColor};color:#ffffff;text-decoration:none;font-size:13px;font-weight:600;">${bookingLabel}</a>`
+      : ''
     : ''
 
   const workplaceLink = template.showWorkplaceLink
-    ? `<a href="${profile.workplaceUrl}" style="color:${template.secondaryColor};text-decoration:none;">${branding.workplaceLabel}</a>`
+    ? workplaceUrl
+      ? `<a href="${workplaceUrl}" style="color:${template.secondaryColor};text-decoration:none;">${workplaceLabel}</a>`
+      : ''
     : ''
 
   const bannerHtml = bannerBlock(profile.bookingUrl, template.accentColor, banner)
@@ -68,7 +104,7 @@ export function renderSignature({ profile, template, branding, banner }: Signatu
         <strong style="color:#243047;">SECURITY:</strong> Please do not open attachments or click links unless you recognise the sender and were expecting the message.
       </div>
       <div>
-        <strong style="color:#243047;">PRIVACY:</strong> ${branding.companyName} processes personal data in accordance with its <a href="${branding.privacyPolicyUrl}" style="color:${template.secondaryColor};text-decoration:none;">${branding.privacyPolicyLabel}</a>.
+        <strong style="color:#243047;">PRIVACY:</strong> ${companyName} processes personal data in accordance with its <a href="${privacyPolicyUrl}" style="color:${template.secondaryColor};text-decoration:none;">${privacyPolicyLabel}</a>.
       </div>
     </div>
   `.trim()
@@ -80,23 +116,23 @@ export function renderSignature({ profile, template, branding, banner }: Signatu
         <tr>
           <td style="vertical-align:top;padding-right:18px;width:88px;">
             <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(180deg,#3c67f4 0%,#1d2f75 100%);display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 14px 28px rgba(38,65,147,0.2);">
-              <img src="${branding.logoUrl}" alt="${branding.companyName}" width="42" height="42" style="display:block;width:42px;height:42px;object-fit:contain;" />
+              <img src="${logoUrl}" alt="${companyName}" width="42" height="42" style="display:block;width:42px;height:42px;object-fit:contain;" />
             </div>
           </td>
           <td style="vertical-align:top;">
-            <div style="font-size:24px;line-height:1.05;font-weight:700;letter-spacing:-0.03em;">${profile.fullName}</div>
-            <div style="font-size:14px;color:#4c5568;margin-top:5px;">${profile.title}</div>
+            <div style="font-size:24px;line-height:1.05;font-weight:700;letter-spacing:-0.03em;">${fullName}</div>
+            <div style="font-size:14px;color:#4c5568;margin-top:5px;">${title}</div>
             ${departmentChip}
             <div style="height:14px"></div>
             <div style="font-size:13px;line-height:1.8;color:#334155;">
-              <strong style="font-weight:600;">P</strong> <a href="tel:${profile.businessLandline}" style="color:${template.secondaryColor};text-decoration:none;">${profile.businessLandline}</a><br />
-              <strong style="font-weight:600;">W</strong> <a href="${profile.websiteUrl}" style="color:${template.secondaryColor};text-decoration:none;">${branding.companyWebsiteLabel}</a><br />
+              <strong style="font-weight:600;">P</strong> <a href="tel:${businessLandline}" style="color:${template.secondaryColor};text-decoration:none;">${businessLandline}</a><br />
+              <strong style="font-weight:600;">W</strong> <a href="${websiteUrl}" style="color:${template.secondaryColor};text-decoration:none;">${companyWebsiteLabel}</a><br />
               ${workplaceLink ? `<strong style="font-weight:600;">D</strong> ${workplaceLink}<br />` : ''}
             </div>
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px;">
               ${bookingCta}
               <div style="display:flex;gap:8px;">
-                ${profile.socialLinks.map(socialBadge).join('')}
+                ${validSocialLinks.map(socialBadge).join('')}
               </div>
             </div>
             ${bannerHtml}
@@ -109,21 +145,21 @@ export function renderSignature({ profile, template, branding, banner }: Signatu
 
   const plainText = [
     `[${SIGNATURE_MARKER}]`,
-    profile.fullName,
-    profile.title,
-    profile.department,
-    `P ${profile.businessLandline}`,
-    branding.companyWebsiteLabel,
-    template.showWorkplaceLink ? branding.workplaceLabel : '',
-    template.showBookingCta ? branding.bookingLabel : '',
-    ...profile.socialLinks.map((link) => `${link.label}: ${link.href}`),
+    fullName,
+    title,
+    department,
+    businessLandline ? `P ${businessLandline}` : '',
+    companyWebsiteLabel,
+    template.showWorkplaceLink && workplaceUrl ? workplaceLabel : '',
+    template.showBookingCta && bookingUrl ? bookingLabel : '',
+    ...validSocialLinks.map((link) => `${link.label}: ${link.href}`),
     banner?.headline || '',
     banner?.body || '',
-    banner ? `${banner.ctaLabel}: ${banner.ctaHref}` : '',
+    banner ? `${banner.ctaLabel}: ${banner.ctaHref || bookingUrl}` : '',
     '',
     'CONFIDENTIALITY NOTICE: This email (and any attachments) is intended only for the named recipient(s) and may contain confidential and/or legally privileged information. If you are not the intended recipient, please notify the sender immediately, delete this email from your system, and do not copy, disclose, or use its contents.',
     'SECURITY: Please do not open attachments or click links unless you recognise the sender and were expecting the message.',
-    `PRIVACY: ${branding.companyName} processes personal data in accordance with its ${branding.privacyPolicyLabel}: ${branding.privacyPolicyUrl}`,
+    `PRIVACY: ${companyName} processes personal data in accordance with its ${privacyPolicyLabel}: ${privacyPolicyUrl}`,
   ].filter(Boolean).join('\n')
 
   return { html, plainText }

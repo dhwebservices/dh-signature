@@ -5,7 +5,7 @@
   xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides"
   xsi:type="MailApp">
   <Id>9c5603c8-2fd8-4c80-9f87-25f7efb0db35</Id>
-  <Version>0.1.0.0</Version>
+  <Version>0.1.1.0</Version>
   <ProviderName>DH Website Services</ProviderName>
   <DefaultLocale>en-GB</DefaultLocale>
   <DisplayName DefaultValue="DH Signature" />
@@ -28,7 +28,7 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://sig.dhwebsiteservices.co.uk/taskpane/index.html" />
+        <SourceLocation DefaultValue="https://sig.dhwebsiteservices.co.uk/taskpane/" />
         <RequestedHeight>320</RequestedHeight>
       </DesktopSettings>
     </Form>
@@ -93,8 +93,8 @@
           <bt:Image id="Icon80" DefaultValue="https://sig.dhwebsiteservices.co.uk/icons/dh-logo.png" />
         </bt:Images>
         <bt:Urls>
-          <bt:Url id="Taskpane.Url" DefaultValue="https://sig.dhwebsiteservices.co.uk/taskpane/index.html" />
-          <bt:Url id="Autorun.Url" DefaultValue="https://sig.dhwebsiteservices.co.uk/commands/commands.html" />
+          <bt:Url id="Taskpane.Url" DefaultValue="https://sig.dhwebsiteservices.co.uk/taskpane/" />
+          <bt:Url id="Autorun.Url" DefaultValue="https://sig.dhwebsiteservices.co.uk/commands/commands" />
           <bt:Url id="Autorun.Script" DefaultValue="https://sig.dhwebsiteservices.co.uk/commands/commands.js" />
         </bt:Urls>
         <bt:ShortStrings>

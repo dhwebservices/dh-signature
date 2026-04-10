@@ -11,6 +11,34 @@
     </div>
   `.trim()
 
+  function normalizeEmail(value) {
+    return typeof value === 'string' ? value.trim().toLowerCase() : ''
+  }
+
+  function extractEmailAddress(value) {
+    if (!value || typeof value !== 'string') return ''
+    const match = value.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)
+    return normalizeEmail(match ? match[0] : value)
+  }
+
+  function resolveSenderEmail(item) {
+    const candidates = [
+      Office.context?.mailbox?.userProfile?.emailAddress,
+      item?.from?.emailAddress,
+      item?.sender?.emailAddress,
+      item?.organizer?.emailAddress,
+      item?.from?.displayName,
+      item?.sender?.displayName,
+    ]
+
+    for (var index = 0; index < candidates.length; index += 1) {
+      const email = extractEmailAddress(candidates[index])
+      if (email) return email
+    }
+
+    return ''
+  }
+
   async function fetchRenderedSignature(email) {
     const response = await fetch(`/api/signature?email=${encodeURIComponent(email)}`, {
       credentials: 'same-origin',
@@ -22,16 +50,6 @@
     }
 
     return response.json()
-  }
-
-  function resolveSenderEmail(item) {
-    const mailboxEmail = Office.context?.mailbox?.userProfile?.emailAddress
-
-    if (item?.from?.emailAddress) {
-      return item.from.emailAddress
-    }
-
-    return mailboxEmail || ''
   }
 
   function applySignature(html, event) {
@@ -50,9 +68,32 @@
     )
   }
 
+  function getCurrentBodyHtml(item) {
+    return new Promise(function (resolve) {
+      if (!item || !item.body || typeof item.body.getAsync !== 'function') {
+        resolve('')
+        return
+      }
+
+      item.body.getAsync(Office.CoercionType.Html, function (result) {
+        if (result.status === Office.AsyncResultStatus.Succeeded) {
+          resolve(result.value || '')
+          return
+        }
+
+        resolve('')
+      })
+    })
+  }
+
   async function onNewMessageComposeHandler(event) {
     try {
       const item = Office.context?.mailbox?.item
+      const existingBody = await getCurrentBodyHtml(item)
+      if (existingBody && existingBody.includes(SIGNATURE_MARKER)) {
+        event.completed()
+        return
+      }
       const email = resolveSenderEmail(item)
       if (!email) {
         applySignature(FALLBACK_SIGNATURE, event)
