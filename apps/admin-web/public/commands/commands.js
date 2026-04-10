@@ -3,13 +3,14 @@
 (function () {
   const SIGNATURE_MARKER = 'DH_SIGNATURE_V1'
   const FALLBACK_SIGNATURE = `
-    <div style="font-family:Inter,Arial,sans-serif;color:#1f2430;">
+    <div style="font-family:Arial,sans-serif;color:#1f2430;">
       <!-- ${SIGNATURE_MARKER} -->
       <strong>DH Website Services</strong><br />
       <a href="https://dhwebsiteservices.co.uk" style="color:#3b67f2;text-decoration:none;">dhwebsiteservices.co.uk</a><br />
       <a href="tel:02920024218" style="color:#3b67f2;text-decoration:none;">02920 024218</a>
     </div>
   `.trim()
+  const NOTIFICATION_KEY = 'dh_signature_status'
 
   function normalizeEmail(value) {
     return typeof value === 'string' ? value.trim().toLowerCase() : ''
@@ -39,6 +40,30 @@
     return ''
   }
 
+  function resolveSenderEmailAsync(item) {
+    return new Promise(function (resolve) {
+      const directEmail = resolveSenderEmail(item)
+      if (directEmail) {
+        resolve(directEmail)
+        return
+      }
+
+      if (item?.from && typeof item.from.getAsync === 'function') {
+        item.from.getAsync(function (result) {
+          if (result.status === Office.AsyncResultStatus.Succeeded) {
+            resolve(extractEmailAddress(result.value?.emailAddress || result.value?.displayName))
+            return
+          }
+
+          resolve('')
+        })
+        return
+      }
+
+      resolve('')
+    })
+  }
+
   async function fetchRenderedSignature(email) {
     const response = await fetch(`/api/signature?email=${encodeURIComponent(email)}`, {
       credentials: 'same-origin',
@@ -53,22 +78,6 @@
     }
 
     return response.json()
-  }
-
-  function applySignature(html, event) {
-    const item = Office.context?.mailbox?.item
-    if (!item || !item.body || typeof item.body.setSignatureAsync !== 'function') {
-      event.completed()
-      return
-    }
-
-    item.body.setSignatureAsync(
-      html,
-      { coercionType: Office.CoercionType.Html },
-      function () {
-        event.completed()
-      },
-    )
   }
 
   function getCurrentBodyHtml(item) {
@@ -101,25 +110,113 @@
     return html.replace(markerText, '').trim()
   }
 
-  async function onNewMessageComposeHandler(event) {
+  function addNotification(item, message, icon) {
+    return new Promise(function (resolve) {
+      if (!item?.notificationMessages || typeof item.notificationMessages.addAsync !== 'function') {
+        resolve()
+        return
+      }
+
+      item.notificationMessages.addAsync(
+        NOTIFICATION_KEY,
+        {
+          type: Office.MailboxEnums.ItemNotificationMessageType.InformationalMessage,
+          message: message,
+          icon: icon || 'Icon.16x16',
+          persistent: false,
+        },
+        function () {
+          resolve()
+        },
+      )
+    })
+  }
+
+  function disableClientSignature(item) {
+    return new Promise(function (resolve) {
+      if (!item || typeof item.disableClientSignatureAsync !== 'function') {
+        resolve()
+        return
+      }
+
+      item.disableClientSignatureAsync(function () {
+        resolve()
+      })
+    })
+  }
+
+  function applySignature(item, html) {
+    return new Promise(function (resolve, reject) {
+      if (!item || !item.body || typeof item.body.setSignatureAsync !== 'function') {
+        reject(new Error('setSignatureAsync is unavailable.'))
+        return
+      }
+
+      item.body.setSignatureAsync(
+        html,
+        { coercionType: Office.CoercionType.Html },
+        function (result) {
+          if (result.status === Office.AsyncResultStatus.Succeeded) {
+            resolve()
+            return
+          }
+
+          reject(result.error || new Error('Could not apply signature.'))
+        },
+      )
+    })
+  }
+
+  function complete(event) {
     try {
-      const item = Office.context?.mailbox?.item
+      event.completed()
+    } catch (_error) {
+      // Ignore completion issues.
+    }
+  }
+
+  async function onNewMessageComposeHandler(event) {
+    const item = Office.context?.mailbox?.item
+
+    try {
+      await disableClientSignature(item)
+
       const existingBody = await getCurrentBodyHtml(item)
       if (existingBody && existingBody.includes(SIGNATURE_MARKER)) {
-        applySignature(removeExistingSignature(existingBody), event)
+        await applySignature(item, removeExistingSignature(existingBody))
+        await addNotification(item, 'DH signature refreshed.')
+        complete(event)
         return
       }
 
-      const email = resolveSenderEmail(item)
-      if (!email) {
-        applySignature(FALLBACK_SIGNATURE, event)
-        return
+      const email = await resolveSenderEmailAsync(item)
+      let html = FALLBACK_SIGNATURE
+      let usedFallback = true
+
+      if (email) {
+        try {
+          const payload = await fetchRenderedSignature(email)
+          const renderedHtml = payload?.rendered?.html
+          if (renderedHtml) {
+            html = renderedHtml
+            usedFallback = false
+          }
+        } catch (_error) {
+          usedFallback = true
+        }
       }
 
-      const payload = await fetchRenderedSignature(email)
-      applySignature(payload?.rendered?.html || FALLBACK_SIGNATURE, event)
+      await applySignature(item, html)
+      await addNotification(item, usedFallback ? 'DH fallback signature added.' : 'DH signature added.')
+      complete(event)
     } catch (_error) {
-      applySignature(FALLBACK_SIGNATURE, event)
+      try {
+        await applySignature(item, FALLBACK_SIGNATURE)
+        await addNotification(item, 'DH fallback signature added.')
+      } catch (_innerError) {
+        await addNotification(item, 'DH signature failed to load.')
+      }
+      complete(event)
     }
   }
 

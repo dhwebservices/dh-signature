@@ -4,13 +4,15 @@ export {}
 
 const SIGNATURE_MARKER = 'DH_SIGNATURE_V1'
 const FALLBACK_SIGNATURE = `
-  <div style="font-family:Inter,Arial,sans-serif;color:#1f2430;">
+  <div style="font-family:Arial,sans-serif;color:#1f2430;">
     <!-- ${SIGNATURE_MARKER} -->
     <strong>DH Website Services</strong><br />
     <a href="https://dhwebsiteservices.co.uk" style="color:#3b67f2;text-decoration:none;">dhwebsiteservices.co.uk</a><br />
     <a href="tel:02920024218" style="color:#3b67f2;text-decoration:none;">02920 024218</a>
   </div>
 `.trim()
+
+const NOTIFICATION_KEY = 'dh_signature_status'
 
 function normalizeEmail(value: unknown) {
   return typeof value === 'string' ? value.trim().toLowerCase() : ''
@@ -40,6 +42,30 @@ function resolveSenderEmail(item: Record<string, any> | null | undefined) {
   return ''
 }
 
+function resolveSenderEmailAsync(item: Record<string, any> | null | undefined) {
+  return new Promise<string>((resolve) => {
+    const directEmail = resolveSenderEmail(item)
+    if (directEmail) {
+      resolve(directEmail)
+      return
+    }
+
+    if (item?.from && typeof item.from.getAsync === 'function') {
+      item.from.getAsync((result: Office.AsyncResult<Office.EmailAddressDetails>) => {
+        if (result.status === Office.AsyncResultStatus.Succeeded) {
+          resolve(extractEmailAddress(result.value?.emailAddress || result.value?.displayName))
+          return
+        }
+
+        resolve('')
+      })
+      return
+    }
+
+    resolve('')
+  })
+}
+
 async function fetchRenderedSignature(email: string) {
   const response = await fetch(`/api/signature?email=${encodeURIComponent(email)}`, {
     credentials: 'same-origin',
@@ -52,20 +78,6 @@ async function fetchRenderedSignature(email: string) {
   }
 
   return response.json() as Promise<{ rendered?: { html?: string } }>
-}
-
-function applySignature(html: string, event: Office.AddinCommands.Event) {
-  const item = Office.context?.mailbox?.item
-  if (!item || !('body' in item) || typeof item.body?.setSignatureAsync !== 'function') {
-    event.completed()
-    return
-  }
-
-  item.body.setSignatureAsync(
-    html,
-    { coercionType: Office.CoercionType.Html },
-    () => event.completed(),
-  )
 }
 
 function getCurrentBodyHtml(item: any) {
@@ -98,28 +110,121 @@ function removeExistingSignature(html: string) {
   return html.replace(markerText, '').trim()
 }
 
-async function onNewMessageComposeHandler(event: Office.AddinCommands.Event) {
+function addNotification(item: any, message: string, icon = 'Icon.16x16') {
+  return new Promise<void>((resolve) => {
+    if (!item?.notificationMessages || typeof item.notificationMessages.addAsync !== 'function') {
+      resolve()
+      return
+    }
+
+    item.notificationMessages.addAsync(
+      NOTIFICATION_KEY,
+      {
+        type: Office.MailboxEnums.ItemNotificationMessageType.InformationalMessage,
+        message,
+        icon,
+        persistent: false,
+      },
+      () => resolve(),
+    )
+  })
+}
+
+function disableClientSignature(item: any) {
+  return new Promise<void>((resolve) => {
+    if (!item || typeof item.disableClientSignatureAsync !== 'function') {
+      resolve()
+      return
+    }
+
+    item.disableClientSignatureAsync(() => resolve())
+  })
+}
+
+function applySignature(item: any, html: string) {
+  return new Promise<void>((resolve, reject) => {
+    if (!item || !('body' in item) || typeof item.body?.setSignatureAsync !== 'function') {
+      reject(new Error('setSignatureAsync is unavailable.'))
+      return
+    }
+
+    item.body.setSignatureAsync(
+      html,
+      { coercionType: Office.CoercionType.Html },
+      (result: Office.AsyncResult<void>) => {
+        if (result.status === Office.AsyncResultStatus.Succeeded) {
+          resolve()
+          return
+        }
+
+        reject(result.error || new Error('Could not apply signature.'))
+      },
+    )
+  })
+}
+
+function complete(event: Office.AddinCommands.Event) {
   try {
-    const item = Office.context?.mailbox?.item
-    const existingBody = await getCurrentBodyHtml(item)
-    if (existingBody && existingBody.includes(SIGNATURE_MARKER)) {
-      applySignature(removeExistingSignature(existingBody), event)
-      return
-    }
-
-    const email = resolveSenderEmail(item as Record<string, any> | null | undefined)
-    if (!email) {
-      applySignature(FALLBACK_SIGNATURE, event)
-      return
-    }
-
-    const payload = await fetchRenderedSignature(email)
-    applySignature(payload?.rendered?.html || FALLBACK_SIGNATURE, event)
+    event.completed()
   } catch {
-    applySignature(FALLBACK_SIGNATURE, event)
+    // Ignore completion errors.
   }
 }
 
-Office.onReady(() => {
+async function onNewMessageComposeHandler(event: Office.AddinCommands.Event) {
+  const item = Office.context?.mailbox?.item as any
+
+  try {
+    await disableClientSignature(item)
+
+    const existingBody = await getCurrentBodyHtml(item)
+    if (existingBody && existingBody.includes(SIGNATURE_MARKER)) {
+      await applySignature(item, removeExistingSignature(existingBody))
+      await addNotification(item, 'DH signature refreshed.')
+      complete(event)
+      return
+    }
+
+    const email = await resolveSenderEmailAsync(item)
+    let html = FALLBACK_SIGNATURE
+    let usedFallback = true
+
+    if (email) {
+      try {
+        const payload = await fetchRenderedSignature(email)
+        if (payload?.rendered?.html) {
+          html = payload.rendered.html
+          usedFallback = false
+        }
+      } catch {
+        usedFallback = true
+      }
+    }
+
+    await applySignature(item, html)
+    await addNotification(item, usedFallback ? 'DH fallback signature added.' : 'DH signature added.')
+    complete(event)
+  } catch {
+    try {
+      await applySignature(item, FALLBACK_SIGNATURE)
+      await addNotification(item, 'DH fallback signature added.')
+    } catch {
+      await addNotification(item, 'DH signature failed to load.')
+    }
+    complete(event)
+  }
+}
+
+;(globalThis as any).onNewMessageComposeHandler = onNewMessageComposeHandler
+
+if (typeof Office !== 'undefined' && Office.actions && typeof Office.actions.associate === 'function') {
   Office.actions.associate('onNewMessageComposeHandler', onNewMessageComposeHandler)
-})
+}
+
+if (typeof Office !== 'undefined' && typeof Office.onReady === 'function') {
+  Office.onReady(() => {
+    if (Office.actions && typeof Office.actions.associate === 'function') {
+      Office.actions.associate('onNewMessageComposeHandler', onNewMessageComposeHandler)
+    }
+  })
+}
