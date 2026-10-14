@@ -7,7 +7,7 @@ export const tenantBranding: TenantBranding = {
   bookingLabel: 'Book a call',
   privacyPolicyLabel: 'Privacy Policy',
   privacyPolicyUrl: 'https://dhwebsiteservices.co.uk/privacy/',
-  logoUrl: 'https://sig.dhwebsiteservices.co.uk/icons/dh-mark.png',
+  logoUrl: 'https://sig.dhwebsiteservices.co.uk/icons/dh-mark-tile.png',
   logoMark: 'DH',
   awardTitle: 'Web Design Service of the Year',
   awardSubtitle: 'Wales Prestige Awards 2027/28',

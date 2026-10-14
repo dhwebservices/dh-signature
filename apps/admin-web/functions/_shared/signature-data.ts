@@ -159,9 +159,9 @@ function createSupabaseHeaders(env: Env) {
 }
 
 function buildBranding(env: Env, stored?: StoredAdminState): TenantBranding {
-  // The old logo files are not square and render squashed at 56x56, so map them to the square mark
+  // Older logo files either render squashed or vanish on dark-mode backgrounds, so map them to the white tile mark
   const toSquareMark = (value: string) =>
-    /\/icons\/dh-logo(-icon)?\.png$/.test(value) ? tenantBranding.logoUrl : value
+    /\/icons\/(dh-logo(-icon)?|dh-mark)\.png$/.test(value) ? tenantBranding.logoUrl : value
   const normalizedLogoUrl = toSquareMark(env.DH_LOGO_URL || tenantBranding.logoUrl)
   const storedPrivacyUrl = stored?.branding?.privacyPolicyUrl
 
