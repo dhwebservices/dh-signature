@@ -13,6 +13,8 @@ export const tenantBranding: TenantBranding = {
   awardSubtitle: 'Wales Prestige Awards 2027/28',
   awardUrl: 'https://dhwebsiteservices.co.uk/',
   awardImageUrl: 'https://sig.dhwebsiteservices.co.uk/icons/prestige-2027-28.png',
+  legalLine:
+    'DH Website Services is a trading name of David Hooper Home Limited, registered in England and Wales, company number 17018784. Registered office: 36b Coedpenmaen Road, Trallwn, Pontypridd CF37 4LP. VAT No. GB 517 076 395.',
 }
 
 export const signatureTemplates: SignatureTemplate[] = [

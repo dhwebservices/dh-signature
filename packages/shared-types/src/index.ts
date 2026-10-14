@@ -47,6 +47,7 @@ export interface TenantBranding {
   awardSubtitle?: string
   awardUrl?: string
   awardImageUrl?: string
+  legalLine?: string
 }
 
 export interface RenderedSignature {

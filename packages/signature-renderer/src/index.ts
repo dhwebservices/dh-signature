@@ -56,6 +56,7 @@ export function renderSignature({ profile, template, branding, banner }: Signatu
   const awardSubtitle = safeText(branding.awardSubtitle || '')
   const awardUrl = safeUrl(branding.awardUrl || '', websiteUrl)
   const awardImageUrl = safeUrl(branding.awardImageUrl || '')
+  const legalLine = safeText(branding.legalLine || '')
   const validSocialLinks = profile.socialLinks
     .map((link) => ({ ...link, href: normalizeHref(link.href) }))
     .filter((link) => link.href)
@@ -99,7 +100,7 @@ export function renderSignature({ profile, template, branding, banner }: Signatu
 
   const disclaimerHtml = `
     <div style="margin-top:16px;padding-top:10px;border-top:1px solid ${rule};font-size:9.5px;line-height:1.5;color:#8e8e93;max-width:560px;">
-      This email and any attachments are confidential and intended only for the named recipient(s). If you received it in error, please tell the sender and delete it. Please do not open attachments or links you were not expecting. ${escapeHtml(companyName)} handles personal data in line with its <a href="${privacyPolicyUrl}" style="color:#8e8e93;text-decoration:underline;">${escapeHtml(privacyPolicyLabel)}</a>.
+      This email and any attachments are confidential and intended only for the named recipient(s). If you received it in error, please tell the sender and delete it. Please do not open attachments or links you were not expecting. ${escapeHtml(companyName)} handles personal data in line with its <a href="${privacyPolicyUrl}" style="color:#8e8e93;text-decoration:underline;">${escapeHtml(privacyPolicyLabel)}</a>.${legalLine ? `<br />${escapeHtml(legalLine)}` : ''}
     </div>
   `.trim()
 
@@ -140,6 +141,7 @@ export function renderSignature({ profile, template, branding, banner }: Signatu
     banner ? `${banner.ctaLabel}: ${banner.ctaHref || bookingUrl}` : '',
     '',
     `This email and any attachments are confidential and intended only for the named recipient(s). If you received it in error, please tell the sender and delete it. ${companyName} handles personal data in line with its ${privacyPolicyLabel}: ${privacyPolicyUrl}`,
+    legalLine,
   ].filter(Boolean).join('\n')
 
   return { html, plainText }
