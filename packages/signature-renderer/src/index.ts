@@ -2,12 +2,9 @@ import type { RenderedSignature, SignatureAssignment, SocialLink } from '@dh-sig
 
 export const SIGNATURE_MARKER = 'DH_SIGNATURE_V1'
 
-function socialBadge(link: SocialLink) {
-  return `
-    <a href="${link.href}" aria-label="${link.label}" style="display:inline-block;padding:0 10px;height:24px;line-height:24px;border:1px solid #d7dfef;border-radius:12px;background:#f7f9fc;color:#243047;text-decoration:none;font-size:11px;font-weight:600;">
-      ${link.label}
-    </a>
-  `
+// Plain text links separated by dots, styled like a printed letterhead rather than app buttons
+function socialLink(link: SocialLink, color: string) {
+  return `<a href="${link.href}" style="color:${color};text-decoration:none;">${link.label}</a>`
 }
 
 function safeUrl(value: string, fallback = '') {
@@ -62,34 +59,36 @@ export function renderSignature({ profile, template, branding, banner }: Signatu
   const validSocialLinks = profile.socialLinks
     .map((link) => ({ ...link, href: normalizeHref(link.href) }))
     .filter((link) => link.href)
-  const departmentChip = template.showDepartmentChip
-    ? department
-      ? `
-        <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-top:8px;">
-          <tr>
-            <td style="padding:5px 10px;border-radius:12px;background:#eef3ff;color:${template.accentColor};font-size:11px;font-weight:700;">
-              ${escapeHtml(department)}
-            </td>
-          </tr>
-        </table>
-      `
-      : ''
-    : ''
+  const ink = '#1d1d1f'
+  const muted = '#6e6e73'
+  const rule = '#e5e5ea'
+  const roleLine = [title, template.showDepartmentChip ? department : ''].filter(Boolean).map(escapeHtml).join(' &middot; ')
 
-  const bookingCta = template.showBookingCta
-    ? bookingUrl
-      ? `<a href="${bookingUrl}" style="display:inline-block;padding:9px 16px;border-radius:14px;background:${template.accentColor};color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;line-height:1;">${escapeHtml(bookingLabel)}</a>`
+  const bookingLink =
+    template.showBookingCta && bookingUrl
+      ? `<a href="${bookingUrl}" style="color:${template.accentColor};text-decoration:none;font-weight:700;">${escapeHtml(bookingLabel)} &rarr;</a>`
       : ''
-    : ''
+
+  const contactLine = [
+    businessLandline
+      ? `<a href="tel:${businessLandline.replace(/\s+/g, '')}" style="color:${ink};text-decoration:none;">${escapeHtml(businessLandline)}</a>`
+      : '',
+    `<a href="${websiteUrl}" style="color:${ink};text-decoration:none;">${escapeHtml(companyWebsiteLabel)}</a>`,
+  ]
+    .filter(Boolean)
+    .join(`<span style="color:${rule};">&nbsp;&nbsp;|&nbsp;&nbsp;</span>`)
+
+  const linksLine = [bookingLink, ...validSocialLinks.map((link) => socialLink(link, muted))]
+    .filter(Boolean)
+    .join(`<span style="color:#c7c7cc;">&nbsp;&nbsp;&middot;&nbsp;&nbsp;</span>`)
 
   const awardRow = awardTitle
     ? `
-      <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-top:14px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-top:12px;">
         <tr>
-          ${awardImageUrl ? `<td style="vertical-align:middle;padding-right:10px;"><a href="${awardUrl}" style="text-decoration:none;"><img src="${awardImageUrl}" alt="${escapeHtml(awardSubtitle || awardTitle)}" width="48" height="45" style="display:block;width:48px;height:45px;border:0;" /></a></td>` : ''}
-          <td style="vertical-align:middle;font-size:12px;line-height:1.4;">
-            <div style="font-weight:700;color:#1f2430;">&#127942; ${escapeHtml(awardTitle)}</div>
-            ${awardSubtitle ? `<div style="color:#e8541e;font-weight:600;">${escapeHtml(awardSubtitle)}</div>` : ''}
+          ${awardImageUrl ? `<td style="vertical-align:middle;padding-right:10px;"><a href="${awardUrl}" style="text-decoration:none;"><img src="${awardImageUrl}" alt="${escapeHtml(awardSubtitle || awardTitle)}" width="40" height="37" style="display:block;width:40px;height:37px;border:0;" /></a></td>` : ''}
+          <td style="vertical-align:middle;font-size:11px;line-height:1.45;color:${muted};">
+            <span style="color:${ink};font-weight:700;">${escapeHtml(awardTitle)}</span>${awardSubtitle ? `<br /><span style="color:#d4541f;">${escapeHtml(awardSubtitle)}</span>` : ''}
           </td>
         </tr>
       </table>
@@ -97,62 +96,32 @@ export function renderSignature({ profile, template, branding, banner }: Signatu
     : ''
 
   const bannerHtml = bannerBlock(profile.bookingUrl, template.accentColor, banner)
-  const socialRow = validSocialLinks.length
-    ? `
-      <tr>
-        <td style="padding-top:10px;font-size:11px;line-height:1.6;color:#5b6475;">
-          ${validSocialLinks.map(socialBadge).join('&nbsp;')}
-        </td>
-      </tr>
-    `
-    : ''
 
   const disclaimerHtml = `
-    <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;margin-top:18px;border-top:1px solid #d9e1f0;">
-      <tr>
-        <td style="padding-top:14px;font-size:11px;line-height:1.55;color:#5b6475;">
-          <div style="margin-bottom:8px;">
-        <strong style="color:#243047;">CONFIDENTIALITY NOTICE:</strong> This email (and any attachments) is intended only for the named recipient(s) and may contain confidential and/or legally privileged information. If you are not the intended recipient, please notify the sender immediately, delete this email from your system, and do not copy, disclose, or use its contents.
-          </div>
-          <div style="margin-bottom:8px;">
-        <strong style="color:#243047;">SECURITY:</strong> Please do not open attachments or click links unless you recognise the sender and were expecting the message.
-          </div>
-          <div>
-        <strong style="color:#243047;">PRIVACY:</strong> ${companyName} processes personal data in accordance with its <a href="${privacyPolicyUrl}" style="color:${template.secondaryColor};text-decoration:none;">${privacyPolicyLabel}</a>.
-          </div>
-        </td>
-      </tr>
-    </table>
+    <div style="margin-top:16px;padding-top:10px;border-top:1px solid ${rule};font-size:9.5px;line-height:1.5;color:#8e8e93;max-width:560px;">
+      This email and any attachments are confidential and intended only for the named recipient(s). If you received it in error, please tell the sender and delete it. Please do not open attachments or links you were not expecting. ${escapeHtml(companyName)} handles personal data in line with its <a href="${privacyPolicyUrl}" style="color:#8e8e93;text-decoration:underline;">${escapeHtml(privacyPolicyLabel)}</a>.
+    </div>
   `.trim()
 
   const html = `
-    <div style="font-family:Arial,sans-serif;color:#1f2430;max-width:620px;">
+    <div style="font-family:Arial,Helvetica,sans-serif;color:${ink};max-width:600px;">
       <!-- ${SIGNATURE_MARKER} -->
-      <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;max-width:620px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
         <tr>
-          <td style="vertical-align:top;padding-right:16px;width:72px;">
-            <img src="${logoUrl}" alt="${escapeHtml(companyName)}" width="56" height="56" style="display:block;width:56px;height:56px;border:0;" />
+          <td style="vertical-align:top;padding-right:14px;border-right:2px solid ${rule};">
+            <img src="${logoUrl}" alt="${escapeHtml(companyName)}" width="48" height="48" style="display:block;width:48px;height:48px;border:0;" />
           </td>
-          <td style="vertical-align:top;">
-            <div style="font-size:28px;line-height:1.05;font-weight:700;color:#1f2430;">${escapeHtml(fullName)}</div>
-            <div style="font-size:14px;line-height:1.4;color:#4c5568;padding-top:4px;">${escapeHtml(title)}</div>
-            ${departmentChip}
-            <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-top:12px;">
-              <tr>
-                <td style="font-size:13px;line-height:1.8;color:#334155;">
-                  <strong style="font-weight:700;">P</strong> <a href="tel:${businessLandline}" style="color:${template.secondaryColor};text-decoration:none;">${escapeHtml(businessLandline)}</a><br />
-                  <strong style="font-weight:700;">W</strong> <a href="${websiteUrl}" style="color:${template.secondaryColor};text-decoration:none;">${escapeHtml(companyWebsiteLabel)}</a><br />
-                </td>
-              </tr>
-              ${bookingCta ? `<tr><td style="padding-top:12px;">${bookingCta}</td></tr>` : ''}
-              ${socialRow}
-            </table>
-            ${awardRow}
-            ${bannerHtml}
-            ${disclaimerHtml}
+          <td style="vertical-align:top;padding-left:14px;">
+            <div style="font-size:16px;line-height:1.25;font-weight:700;color:${ink};">${escapeHtml(fullName)}</div>
+            <div style="font-size:12px;line-height:1.5;color:${muted};">${roleLine}</div>
+            <div style="font-size:12px;line-height:1.5;color:${ink};padding-top:8px;">${contactLine}</div>
+            ${linksLine ? `<div style="font-size:12px;line-height:1.5;padding-top:2px;">${linksLine}</div>` : ''}
           </td>
         </tr>
       </table>
+      ${awardRow}
+      ${bannerHtml}
+      ${disclaimerHtml}
     </div>
   `.trim()
 
@@ -170,9 +139,7 @@ export function renderSignature({ profile, template, branding, banner }: Signatu
     banner?.body || '',
     banner ? `${banner.ctaLabel}: ${banner.ctaHref || bookingUrl}` : '',
     '',
-    'CONFIDENTIALITY NOTICE: This email (and any attachments) is intended only for the named recipient(s) and may contain confidential and/or legally privileged information. If you are not the intended recipient, please notify the sender immediately, delete this email from your system, and do not copy, disclose, or use its contents.',
-    'SECURITY: Please do not open attachments or click links unless you recognise the sender and were expecting the message.',
-    `PRIVACY: ${companyName} processes personal data in accordance with its ${privacyPolicyLabel}: ${privacyPolicyUrl}`,
+    `This email and any attachments are confidential and intended only for the named recipient(s). If you received it in error, please tell the sender and delete it. ${companyName} handles personal data in line with its ${privacyPolicyLabel}: ${privacyPolicyUrl}`,
   ].filter(Boolean).join('\n')
 
   return { html, plainText }
