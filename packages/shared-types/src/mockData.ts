@@ -6,9 +6,13 @@ export const tenantBranding: TenantBranding = {
   workplaceLabel: 'DH Workplace',
   bookingLabel: 'Book a call',
   privacyPolicyLabel: 'Privacy Policy',
-  privacyPolicyUrl: 'https://dhwebsiteservices.co.uk/privacy-policy',
-  logoUrl: 'https://sig.dhwebsiteservices.co.uk/icons/dh-logo-icon.png',
+  privacyPolicyUrl: 'https://dhwebsiteservices.co.uk/privacy/',
+  logoUrl: 'https://sig.dhwebsiteservices.co.uk/icons/dh-mark.png',
   logoMark: 'DH',
+  awardTitle: 'Web Design Service of the Year',
+  awardSubtitle: 'Wales Prestige Awards 2027/28',
+  awardUrl: 'https://dhwebsiteservices.co.uk/',
+  awardImageUrl: 'https://sig.dhwebsiteservices.co.uk/icons/prestige-2027-28.png',
 }
 
 export const signatureTemplates: SignatureTemplate[] = [
@@ -20,7 +24,7 @@ export const signatureTemplates: SignatureTemplate[] = [
     secondaryColor: '#12203f',
     showDepartmentChip: true,
     showBookingCta: true,
-    showWorkplaceLink: true,
+    showWorkplaceLink: false,
   },
   {
     id: 'signature-sales',
@@ -30,7 +34,7 @@ export const signatureTemplates: SignatureTemplate[] = [
     secondaryColor: '#1d3557',
     showDepartmentChip: true,
     showBookingCta: true,
-    showWorkplaceLink: true,
+    showWorkplaceLink: false,
   },
   {
     id: 'signature-minimal',
@@ -40,7 +44,7 @@ export const signatureTemplates: SignatureTemplate[] = [
     secondaryColor: '#3b67f2',
     showDepartmentChip: false,
     showBookingCta: false,
-    showWorkplaceLink: true,
+    showWorkplaceLink: false,
   },
 ]
 
@@ -51,8 +55,8 @@ export const signatureProfiles: SignatureProfile[] = [
     fullName: 'David Hooper',
     title: 'Director',
     department: 'Directors Office',
-    workPhone: '02920 024218',
-    businessLandline: '02920 024218',
+    workPhone: '01443 805303',
+    businessLandline: '01443 805303',
     websiteUrl: 'https://dhwebsiteservices.co.uk',
     workplaceUrl: 'https://workplace.dhwebsiteservices.co.uk',
     bookingUrl: 'https://dhwebsiteservices.co.uk/contact',
@@ -72,8 +76,8 @@ export const signatureProfiles: SignatureProfile[] = [
     fullName: 'Mac Confield',
     title: 'Head of Client Operations',
     department: 'Client Operations',
-    workPhone: '02920 024218',
-    businessLandline: '02920 024218',
+    workPhone: '01443 805303',
+    businessLandline: '01443 805303',
     websiteUrl: 'https://dhwebsiteservices.co.uk',
     workplaceUrl: 'https://workplace.dhwebsiteservices.co.uk',
     bookingUrl: 'https://dhwebsiteservices.co.uk/contact',

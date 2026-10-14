@@ -58,6 +58,9 @@ interface StoredAdminState {
 
 const ADMIN_STATE_KEY = 'dh_signature:admin_state'
 
+// Pontypridd office line (DH Phone). Replaces the old 02920 Cardiff number, so the DH_BUSINESS_LANDLINE env var is no longer read.
+const DH_OFFICE_NUMBER = '01443 805303'
+
 const normalizeEmail = (value = '') => value.trim().toLowerCase()
 
 const firstNonEmpty = (...values: Array<string | null | undefined>) => {
@@ -156,17 +159,24 @@ function createSupabaseHeaders(env: Env) {
 }
 
 function buildBranding(env: Env, stored?: StoredAdminState): TenantBranding {
-  const configuredLogoUrl = env.DH_LOGO_URL || tenantBranding.logoUrl
-  const normalizedLogoUrl = configuredLogoUrl.endsWith('/icons/dh-logo.png')
-    ? configuredLogoUrl.replace('/icons/dh-logo.png', '/icons/dh-logo-icon.png')
-    : configuredLogoUrl
+  // The old logo files are not square and render squashed at 56x56, so map them to the square mark
+  const toSquareMark = (value: string) =>
+    /\/icons\/dh-logo(-icon)?\.png$/.test(value) ? tenantBranding.logoUrl : value
+  const normalizedLogoUrl = toSquareMark(env.DH_LOGO_URL || tenantBranding.logoUrl)
+  const storedPrivacyUrl = stored?.branding?.privacyPolicyUrl
 
   return {
     ...tenantBranding,
     ...stored?.branding,
     companyWebsiteLabel: env.DH_WEBSITE_URL ? new URL(env.DH_WEBSITE_URL).host.replace(/^www\./, '') : stored?.branding?.companyWebsiteLabel || tenantBranding.companyWebsiteLabel,
-    privacyPolicyUrl: env.DH_PRIVACY_POLICY_URL || stored?.branding?.privacyPolicyUrl || tenantBranding.privacyPolicyUrl,
-    logoUrl: stored?.branding?.logoUrl || normalizedLogoUrl,
+    privacyPolicyUrl:
+      env.DH_PRIVACY_POLICY_URL ||
+      (storedPrivacyUrl && !storedPrivacyUrl.endsWith('/privacy-policy') ? storedPrivacyUrl : tenantBranding.privacyPolicyUrl),
+    logoUrl: stored?.branding?.logoUrl ? toSquareMark(stored.branding.logoUrl) : normalizedLogoUrl,
+    awardTitle: stored?.branding?.awardTitle ?? tenantBranding.awardTitle,
+    awardSubtitle: stored?.branding?.awardSubtitle ?? tenantBranding.awardSubtitle,
+    awardUrl: stored?.branding?.awardUrl ?? tenantBranding.awardUrl,
+    awardImageUrl: stored?.branding?.awardImageUrl ?? tenantBranding.awardImageUrl,
   }
 }
 
@@ -175,7 +185,7 @@ function getGlobalLinks(env: Env) {
     websiteUrl: env.DH_WEBSITE_URL || 'https://dhwebsiteservices.co.uk',
     workplaceUrl: env.DH_WORKPLACE_URL || 'https://workplace.dhwebsiteservices.co.uk',
     bookingUrl: env.DH_BOOKING_URL || 'https://dhwebsiteservices.co.uk/contact',
-    businessLandline: env.DH_BUSINESS_LANDLINE || '02920 024218',
+    businessLandline: DH_OFFICE_NUMBER,
     socialLinks: [
       {
         platform: 'instagram' as const,

@@ -43,6 +43,10 @@ export interface TenantBranding {
   privacyPolicyUrl: string
   logoUrl: string
   logoMark: string
+  awardTitle?: string
+  awardSubtitle?: string
+  awardUrl?: string
+  awardImageUrl?: string
 }
 
 export interface RenderedSignature {

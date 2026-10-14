@@ -48,15 +48,17 @@ export function renderSignature({ profile, template, branding, banner }: Signatu
   const department = safeText(profile.department)
   const businessLandline = safeText(profile.businessLandline, safeText(profile.workPhone))
   const websiteUrl = safeUrl(profile.websiteUrl, 'https://dhwebsiteservices.co.uk')
-  const workplaceUrl = safeUrl(profile.workplaceUrl)
   const bookingUrl = safeUrl(profile.bookingUrl)
   const logoUrl = safeUrl(branding.logoUrl, 'https://sig.dhwebsiteservices.co.uk/icons/dh-logo-icon.png')
   const companyName = safeText(branding.companyName, 'DH Website Services')
   const companyWebsiteLabel = safeText(branding.companyWebsiteLabel, 'dhwebsiteservices.co.uk')
-  const workplaceLabel = safeText(branding.workplaceLabel, 'DH Workplace')
   const bookingLabel = safeText(branding.bookingLabel, 'Book a call')
   const privacyPolicyLabel = safeText(branding.privacyPolicyLabel, 'Privacy Policy')
-  const privacyPolicyUrl = safeUrl(branding.privacyPolicyUrl, 'https://dhwebsiteservices.co.uk/privacy-policy')
+  const privacyPolicyUrl = safeUrl(branding.privacyPolicyUrl, 'https://dhwebsiteservices.co.uk/privacy/')
+  const awardTitle = safeText(branding.awardTitle || '')
+  const awardSubtitle = safeText(branding.awardSubtitle || '')
+  const awardUrl = safeUrl(branding.awardUrl || '', websiteUrl)
+  const awardImageUrl = safeUrl(branding.awardImageUrl || '')
   const validSocialLinks = profile.socialLinks
     .map((link) => ({ ...link, href: normalizeHref(link.href) }))
     .filter((link) => link.href)
@@ -80,10 +82,18 @@ export function renderSignature({ profile, template, branding, banner }: Signatu
       : ''
     : ''
 
-  const workplaceLink = template.showWorkplaceLink
-    ? workplaceUrl
-      ? `<a href="${workplaceUrl}" style="color:${template.secondaryColor};text-decoration:none;">${escapeHtml(workplaceLabel)}</a>`
-      : ''
+  const awardRow = awardTitle
+    ? `
+      <table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-top:14px;">
+        <tr>
+          ${awardImageUrl ? `<td style="vertical-align:middle;padding-right:10px;"><a href="${awardUrl}" style="text-decoration:none;"><img src="${awardImageUrl}" alt="${escapeHtml(awardSubtitle || awardTitle)}" width="48" height="45" style="display:block;width:48px;height:45px;border:0;" /></a></td>` : ''}
+          <td style="vertical-align:middle;font-size:12px;line-height:1.4;">
+            <div style="font-weight:700;color:#1f2430;">&#127942; ${escapeHtml(awardTitle)}</div>
+            ${awardSubtitle ? `<div style="color:#e8541e;font-weight:600;">${escapeHtml(awardSubtitle)}</div>` : ''}
+          </td>
+        </tr>
+      </table>
+    `
     : ''
 
   const bannerHtml = bannerBlock(profile.bookingUrl, template.accentColor, banner)
@@ -132,12 +142,12 @@ export function renderSignature({ profile, template, branding, banner }: Signatu
                 <td style="font-size:13px;line-height:1.8;color:#334155;">
                   <strong style="font-weight:700;">P</strong> <a href="tel:${businessLandline}" style="color:${template.secondaryColor};text-decoration:none;">${escapeHtml(businessLandline)}</a><br />
                   <strong style="font-weight:700;">W</strong> <a href="${websiteUrl}" style="color:${template.secondaryColor};text-decoration:none;">${escapeHtml(companyWebsiteLabel)}</a><br />
-                  ${workplaceLink ? `<strong style="font-weight:700;">D</strong> ${workplaceLink}<br />` : ''}
                 </td>
               </tr>
               ${bookingCta ? `<tr><td style="padding-top:12px;">${bookingCta}</td></tr>` : ''}
               ${socialRow}
             </table>
+            ${awardRow}
             ${bannerHtml}
             ${disclaimerHtml}
           </td>
@@ -153,7 +163,7 @@ export function renderSignature({ profile, template, branding, banner }: Signatu
     department,
     businessLandline ? `P ${businessLandline}` : '',
     companyWebsiteLabel,
-    template.showWorkplaceLink && workplaceUrl ? workplaceLabel : '',
+    awardTitle ? `${awardTitle}${awardSubtitle ? ` - ${awardSubtitle}` : ''}` : '',
     template.showBookingCta && bookingUrl ? bookingLabel : '',
     ...validSocialLinks.map((link) => `${link.label}: ${link.href}`),
     banner?.headline || '',
